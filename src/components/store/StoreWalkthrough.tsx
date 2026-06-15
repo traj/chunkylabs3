@@ -5,6 +5,7 @@ import { useLenis } from "lenis/react";
 import { STATIONS } from "@/data/stations";
 import { StationFrame } from "@/components/stations/StationFrame";
 import { ScrollProgressBar } from "@/components/store/ScrollProgressBar";
+import { PlaybackUnlockProvider } from "@/components/stations/PlaybackUnlock";
 
 /**
  * Composes the stations in order and makes the visit navigable.
@@ -13,8 +14,9 @@ import { ScrollProgressBar } from "@/components/store/ScrollProgressBar";
  * from it. Navigation is play-through-friendly: native scroll OR prev/next buttons that
  * Lenis-scroll to the adjacent station's anchor.
  *
- * Active-station tracking uses IntersectionObserver (not scroll-scrubbing) — the same
- * gate the real build will use to trigger a station's play-through video on enter.
+ * Active-station tracking uses ONE IntersectionObserver (not scroll-scrubbing). The active
+ * index is passed down to each StationFrame → StationTransition, which is the single gate
+ * that drives each station's play-through video on enter.
  */
 export function StoreWalkthrough() {
   const lenis = useLenis();
@@ -56,16 +58,19 @@ export function StoreWalkthrough() {
     <>
       <ScrollProgressBar />
 
-      <main>
-        {STATIONS.map((station, i) => (
-          <StationFrame
-            key={station.id}
-            station={station}
-            index={i}
-            total={total}
-          />
-        ))}
-      </main>
+      <PlaybackUnlockProvider>
+        <main>
+          {STATIONS.map((station, i) => (
+            <StationFrame
+              key={station.id}
+              station={station}
+              index={i}
+              total={total}
+              activeIndex={active}
+            />
+          ))}
+        </main>
+      </PlaybackUnlockProvider>
 
       <nav
         aria-label="Walk-through navigation"

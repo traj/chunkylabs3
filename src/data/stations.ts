@@ -102,7 +102,12 @@ export const STATIONS: readonly Station[] = [
     label: "The Door",
     slug: "door",
     description: "Push-in through the front door. The bell rings.",
-    transitionIn: {},
+    transitionIn: {
+      av1Src: "/transitions/_placeholder/door.av1.mp4",
+      h264Src: "/transitions/_placeholder/door.h264.mp4",
+      poster: "/transitions/_placeholder/door.poster.jpg",
+      durationSec: 3,
+    },
     dom: {
       heading: "Come in",
       body: "Mind the step.",
@@ -114,7 +119,12 @@ export const STATIONS: readonly Station[] = [
     label: "The Counter",
     slug: "counter",
     description: "The clerk looks up from behind the counter.",
-    transitionIn: {},
+    transitionIn: {
+      av1Src: "/transitions/_placeholder/counter.av1.mp4",
+      h264Src: "/transitions/_placeholder/counter.h264.mp4",
+      poster: "/transitions/_placeholder/counter.poster.jpg",
+      durationSec: 3,
+    },
     dom: {
       heading: "The Counter",
       body: "Ask the clerk anything. (Voice lines are placeholders for now.)",
@@ -126,7 +136,12 @@ export const STATIONS: readonly Station[] = [
     label: "Left Bins",
     slug: "left-bins",
     description: "Crates down the left wall. Flip through the records.",
-    transitionIn: {},
+    transitionIn: {
+      av1Src: "/transitions/_placeholder/left-bins.av1.mp4",
+      h264Src: "/transitions/_placeholder/left-bins.h264.mp4",
+      poster: "/transitions/_placeholder/left-bins.poster.jpg",
+      durationSec: 3,
+    },
     dom: {
       heading: "Left Bins",
       body: "Dig through the crates.",
@@ -138,7 +153,12 @@ export const STATIONS: readonly Station[] = [
     label: "Right Bins",
     slug: "right-bins",
     description: "More crates down the right wall.",
-    transitionIn: {},
+    transitionIn: {
+      av1Src: "/transitions/_placeholder/right-bins.av1.mp4",
+      h264Src: "/transitions/_placeholder/right-bins.h264.mp4",
+      poster: "/transitions/_placeholder/right-bins.poster.jpg",
+      durationSec: 3,
+    },
     dom: {
       heading: "Right Bins",
       body: "Keep digging.",
@@ -150,7 +170,12 @@ export const STATIONS: readonly Station[] = [
     label: "Mixtape Shelf",
     slug: "mixtape-shelf",
     description: "Hand-made mixtapes on the back shelf. One of a kind.",
-    transitionIn: {},
+    transitionIn: {
+      av1Src: "/transitions/_placeholder/mixtape-shelf.av1.mp4",
+      h264Src: "/transitions/_placeholder/mixtape-shelf.h264.mp4",
+      poster: "/transitions/_placeholder/mixtape-shelf.poster.jpg",
+      durationSec: 3,
+    },
     dom: {
       heading: "Mixtape Shelf",
       body: "Or just take it all home.",
