@@ -102,7 +102,10 @@ export function StationTransition({
 
     if (isActive) {
       if (forceTap) {
-        v.autoplay = false;
+        // Debug (?forceTapToPlay=1): simulate a rejected autoplay so the tap-to-play
+        // overlay is testable. Gate the overlay on `needsTap` state ONLY — do not mutate
+        // v.autoplay (that would leave the property false: a latent footgun if forceTap
+        // ever becomes dynamic). The real (non-debug) path below is unchanged.
         v.pause();
         setNeedsTap(true);
         return;
