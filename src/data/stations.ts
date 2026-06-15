@@ -1,0 +1,184 @@
+/**
+ * Station model — the SINGLE SOURCE OF TRUTH for the walk-through order.
+ *
+ * The site is an "interactive record store visit": fixed camera stations connected by
+ * pre-rendered, PLAY-THROUGH video transitions (never scrubbed — see CLAUDE.md and
+ * docs/research/2026-06-video-and-animation-findings.md §Q3), with live DOM layers
+ * composited over the video.
+ *
+ * This module defines the ordered sequence and the typed slots that the (future)
+ * transition engine and CMS will fill. No transition engine or real video lives here yet.
+ */
+
+export type StationId =
+  | "street"
+  | "door"
+  | "counter"
+  | "left-bins"
+  | "right-bins"
+  | "mixtape-shelf";
+
+/**
+ * A pre-rendered transition clip that PLAYS THROUGH to arrive at a station.
+ *
+ * Delivery rules locked by research (§Q1) — encoded here as the asset contract:
+ *  - Ordered <source>: AV1 (Profile 0, 8-bit) first, H.264/MP4 last.
+ *  - H.264/MP4 is the MANDATORY floor. `h264Src` is what guarantees playback on every
+ *    device; `av1Src` is an optional progressive upgrade. Never ship AV1-only.
+ *  - `poster` is the first frame, shown before play AND as the fallback when autoplay is
+ *    blocked (Low Power Mode is undetectable — §Q2).
+ *
+ * All fields are optional because no real clips are encoded yet — this is the shape only.
+ */
+export interface TransitionAsset {
+  /** AV1 (Profile 0, 8-bit) MP4 — optional progressive upgrade. */
+  av1Src?: string;
+  /** H.264/MP4 — the mandatory compatibility floor once assets exist. */
+  h264Src?: string;
+  /** Poster / first frame: shown pre-play and as the autoplay-blocked fallback. */
+  poster?: string;
+  /** Target clip length in seconds (research target window: 2–6s). */
+  durationSec?: number;
+}
+
+/** A call-to-action rendered in a station's DOM layer. */
+export interface StationCta {
+  label: string;
+  href: string;
+}
+
+/** Live DOM content composited OVER the video for a station. */
+export interface StationDomLayer {
+  heading?: string;
+  body?: string;
+  cta?: StationCta;
+}
+
+export interface Station {
+  /** Stable id; also used as the in-page anchor target. */
+  id: StationId;
+  /** 1-based position in the walk-through. */
+  order: number;
+  /** Human-readable name, e.g. "Left Bins". */
+  label: string;
+  /** URL-safe slug. Kept distinct from `id` on purpose so they can diverge later. */
+  slug: string;
+  /** What this fixed camera station shows. */
+  description: string;
+  /**
+   * The transition clip that plays to ARRIVE at this station.
+   * `null` for the first station (you start there — nothing plays you in).
+   */
+  transitionIn: TransitionAsset | null;
+  /** DOM layer composited over the scene. */
+  dom: StationDomLayer;
+}
+
+/**
+ * THE ordered sequence. Order in this array is authoritative — derive everything
+ * (navigation, progress, prev/next) from it. Do not hard-code order anywhere else.
+ *
+ * street → door push-in → counter/clerk → left bins → right bins → mixtape shelf
+ *
+ * `transitionIn` is `null`/empty for now: placeholders only, no real video.
+ */
+export const STATIONS: readonly Station[] = [
+  {
+    id: "street",
+    order: 1,
+    label: "The Street",
+    slug: "street",
+    description:
+      "Exterior. Neon in the window, rain on the glass. You're standing outside chunkylabs.",
+    transitionIn: null,
+    dom: {
+      heading: "chunkylabs",
+      body: "A record store that only exists here.",
+    },
+  },
+  {
+    id: "door",
+    order: 2,
+    label: "The Door",
+    slug: "door",
+    description: "Push-in through the front door. The bell rings.",
+    transitionIn: {},
+    dom: {
+      heading: "Come in",
+      body: "Mind the step.",
+    },
+  },
+  {
+    id: "counter",
+    order: 3,
+    label: "The Counter",
+    slug: "counter",
+    description: "The clerk looks up from behind the counter.",
+    transitionIn: {},
+    dom: {
+      heading: "The Counter",
+      body: "Ask the clerk anything. (Voice lines are placeholders for now.)",
+    },
+  },
+  {
+    id: "left-bins",
+    order: 4,
+    label: "Left Bins",
+    slug: "left-bins",
+    description: "Crates down the left wall. Flip through the records.",
+    transitionIn: {},
+    dom: {
+      heading: "Left Bins",
+      body: "Dig through the crates.",
+    },
+  },
+  {
+    id: "right-bins",
+    order: 5,
+    label: "Right Bins",
+    slug: "right-bins",
+    description: "More crates down the right wall.",
+    transitionIn: {},
+    dom: {
+      heading: "Right Bins",
+      body: "Keep digging.",
+    },
+  },
+  {
+    id: "mixtape-shelf",
+    order: 6,
+    label: "Mixtape Shelf",
+    slug: "mixtape-shelf",
+    description: "Hand-made mixtapes on the back shelf. One of a kind.",
+    transitionIn: {},
+    dom: {
+      heading: "Mixtape Shelf",
+      body: "Or just take it all home.",
+      cta: { label: "Browse everything →", href: "/music" },
+    },
+  },
+] as const;
+
+/** Station ids in walk-through order. */
+export const STATION_ORDER: readonly StationId[] = STATIONS.map((s) => s.id);
+
+/** The first station — where the visit starts. */
+export const FIRST_STATION: Station = STATIONS[0];
+
+export function getStationBySlug(slug: string): Station | undefined {
+  return STATIONS.find((s) => s.slug === slug);
+}
+
+export function getStationIndex(id: StationId): number {
+  return STATIONS.findIndex((s) => s.id === id);
+}
+
+export function getNextStation(id: StationId): Station | undefined {
+  const i = getStationIndex(id);
+  return i >= 0 ? STATIONS[i + 1] : undefined;
+}
+
+export function getPrevStation(id: StationId): Station | undefined {
+  const i = getStationIndex(id);
+  return i > 0 ? STATIONS[i - 1] : undefined;
+}
