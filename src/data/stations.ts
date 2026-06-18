@@ -13,6 +13,7 @@
 export type StationId =
   | "street"
   | "door"
+  | "corkboard"
   | "counter"
   | "left-bins"
   | "right-bins"
@@ -78,7 +79,7 @@ export interface Station {
  * THE ordered sequence. Order in this array is authoritative — derive everything
  * (navigation, progress, prev/next) from it. Do not hard-code order anywhere else.
  *
- * street → door push-in → counter/clerk → left bins → right bins → mixtape shelf
+ * street → door push-in → corkboard → counter/clerk → left bins → right bins → mixtape shelf
  *
  * `transitionIn` is `null`/empty for now: placeholders only, no real video.
  */
@@ -114,8 +115,30 @@ export const STATIONS: readonly Station[] = [
     },
   },
   {
-    id: "counter",
+    // The gig-flyer corkboard, just inside the entrance. It surfaces UPDATES (see
+    // src/data/inventory.ts) — ALL updates, flyer-styled by `kind`, not just gigs.
+    id: "corkboard",
     order: 3,
+    label: "The Corkboard",
+    slug: "corkboard",
+    description:
+      "A cork notice board just inside the entrance, papered with gig flyers and news.",
+    transitionIn: {
+      av1Src: "/transitions/_placeholder/corkboard.av1.mp4",
+      h264Src: "/transitions/_placeholder/corkboard.h264.mp4",
+      poster: "/transitions/_placeholder/corkboard.poster.jpg",
+      durationSec: 3,
+    },
+    dom: {
+      heading: "On the board",
+      body: "Flyers, drops, and news. (Updates are placeholders for now.)",
+    },
+  },
+  {
+    // The counter is the purchase CTA surface — it surfaces RELEASES (Beatport) from
+    // src/data/inventory.ts.
+    id: "counter",
+    order: 4,
     label: "The Counter",
     slug: "counter",
     description: "The clerk looks up from behind the counter.",
@@ -132,7 +155,7 @@ export const STATIONS: readonly Station[] = [
   },
   {
     id: "left-bins",
-    order: 4,
+    order: 5,
     label: "Left Bins",
     slug: "left-bins",
     description: "Crates down the left wall. Flip through the records.",
@@ -149,7 +172,7 @@ export const STATIONS: readonly Station[] = [
   },
   {
     id: "right-bins",
-    order: 5,
+    order: 6,
     label: "Right Bins",
     slug: "right-bins",
     description: "More crates down the right wall.",
@@ -166,7 +189,7 @@ export const STATIONS: readonly Station[] = [
   },
   {
     id: "mixtape-shelf",
-    order: 6,
+    order: 7,
     label: "Mixtape Shelf",
     slug: "mixtape-shelf",
     description: "Hand-made mixtapes on the back shelf. One of a kind.",

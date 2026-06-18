@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { BINS, getRecordsByBin, MIXTAPES } from "@/data/inventory";
+import { PLAYLISTS, MIXTAPES } from "@/data/inventory";
 
 /**
  * The escape hatch — a first-class route, not an afterthought.
@@ -12,7 +12,7 @@ import { BINS, getRecordsByBin, MIXTAPES } from "@/data/inventory";
 export const metadata: Metadata = {
   title: "The music — chunkylabs",
   description:
-    "Everything in the store as a plain list — no video required. Records and mixtapes.",
+    "Everything in the store as a plain list — no video required. Playlists and mixtapes.",
 };
 
 export default function MusicPage() {
@@ -35,29 +35,29 @@ export default function MusicPage() {
         </p>
       </header>
 
-      <section aria-labelledby="records-heading" className="mb-12">
-        <h2 id="records-heading" className="mb-4 text-xl font-medium">
-          Records
+      {/*
+        Bins hold playlists; the shelf holds mixtapes. Releases (counter) and updates
+        (corkboard) now have shapes too — they'll list here once the content port fills them.
+        Which playlist sits in which bin is genre-driven curation, not stored, so the escape
+        hatch lists by content type rather than by station.
+      */}
+      <section aria-labelledby="playlists-heading" className="mb-12">
+        <h2 id="playlists-heading" className="mb-4 text-xl font-medium">
+          Playlists
         </h2>
-        {BINS.map((bin) => (
-          <div key={bin.id} className="mb-6">
-            <h3 className="text-sm uppercase tracking-widest text-white/40">
-              {bin.label}
-            </h3>
-            <p className="text-sm text-white/40">{bin.description}</p>
-            <ul className="mt-2 space-y-1">
-              {getRecordsByBin(bin.id).map((record) => (
-                <li key={record.id}>
-                  <span className="font-medium">{record.title}</span>{" "}
-                  <span className="text-white/60">— {record.artist}</span>
-                  {record.year ? (
-                    <span className="text-white/40"> ({record.year})</span>
-                  ) : null}
-                </li>
-              ))}
-            </ul>
-          </div>
-        ))}
+        <ul className="space-y-1">
+          {PLAYLISTS.map((playlist) => (
+            <li key={playlist.id}>
+              <span className="font-medium">{playlist.title}</span>
+              {playlist.series ? (
+                <span className="text-white/40">
+                  {" "}
+                  ({playlist.series.name} {playlist.series.index})
+                </span>
+              ) : null}
+            </li>
+          ))}
+        </ul>
       </section>
 
       <section aria-labelledby="mixtapes-heading">
@@ -67,9 +67,13 @@ export default function MusicPage() {
         <ul className="space-y-2">
           {MIXTAPES.map((mixtape) => (
             <li key={mixtape.id}>
-              <span className="font-medium">{mixtape.title}</span>{" "}
-              <span className="text-white/60">— {mixtape.description}</span>{" "}
-              <span className="text-white/40">({mixtape.trackCount} tracks)</span>
+              <span className="font-medium">{mixtape.title}</span>
+              {mixtape.description ? (
+                <span className="text-white/60"> — {mixtape.description}</span>
+              ) : null}
+              {typeof mixtape.trackCount === "number" ? (
+                <span className="text-white/40"> ({mixtape.trackCount} tracks)</span>
+              ) : null}
             </li>
           ))}
         </ul>
