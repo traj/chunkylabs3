@@ -104,10 +104,12 @@ export const STATIONS: readonly Station[] = [
     slug: "door",
     description: "Push-in through the front door. The bell rings.",
     transitionIn: {
-      av1Src: "/transitions/_placeholder/door.av1.mp4",
-      h264Src: "/transitions/_placeholder/door.h264.mp4",
-      poster: "/transitions/_placeholder/door.poster.jpg",
-      durationSec: 3,
+      // Real encode (street → door). AV1 av01.0.08M.08 + H.264 avc1.4D4028 — codec strings
+      // parsed from the actual av1C/avcC boxes; they match the engine's <source> types.
+      av1Src: "/transitions/door/door.av1.mp4",
+      h264Src: "/transitions/door/door.h264.mp4",
+      poster: "/transitions/door/door.poster.jpg",
+      durationSec: 4,
     },
     dom: {
       heading: "Come in",

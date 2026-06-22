@@ -17,6 +17,46 @@ DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 LBL="${TMPDIR:-/tmp}/cl_labels"
 DUR=3
 FPS=30
+TRIM=4
+
+# Real-asset mode: encode ONE real source clip (landscape) to the SAME spec the synthetic
+# clips use — AV1 (SVT-AV1, Profile 0 8-bit) + H.264 (Main@4.0) + first-frame poster, GOP
+# 60, +faststart. Trims the FIRST $TRIM seconds (-ss 0 -t $TRIM). The real clip IS the
+# source — no testsrc2, no label overlay. Vertical/mobile crop is a later pass (NOT here).
+#   Usage: bash encode.sh --real <input.mp4> <dest> [outdir]
+encode_real() {
+  local input="$1"
+  local dest="$2"
+  local out="$3"
+  mkdir -p "$out"
+
+  # AV1 — SVT-AV1, Profile 0 (yuv420p = 8-bit 4:2:0). Same codec approach as encode().
+  ffmpeg -y -hide_banner -loglevel error \
+    -ss 0 -t "$TRIM" -i "$input" \
+    -vf "format=yuv420p" -map 0:v:0 -an \
+    -c:v libsvtav1 -preset 6 -crf 38 -g 60 \
+    -movflags +faststart \
+    "$out/$dest.av1.mp4"
+
+  # H.264 — libx264 Main@4.0 (mandatory floor). Same codec approach as encode().
+  ffmpeg -y -hide_banner -loglevel error \
+    -ss 0 -t "$TRIM" -i "$input" \
+    -vf "format=yuv420p" -map 0:v:0 -an \
+    -c:v libx264 -profile:v main -level:v 4.0 -preset medium -crf 23 -g 60 \
+    -movflags +faststart \
+    "$out/$dest.h264.mp4"
+
+  # Poster — first frame of the trimmed clip (NOT any external still).
+  ffmpeg -y -hide_banner -loglevel error \
+    -i "$out/$dest.h264.mp4" -frames:v 1 -q:v 3 "$out/$dest.poster.jpg"
+}
+
+if [[ "${1:-}" == "--real" ]]; then
+  echo "encoding REAL '$3' from $2 (first ${TRIM}s) ..."
+  encode_real "$2" "$3" "${4:-$DIR/../$3}"
+  echo "done."
+  exit 0
+fi
 
 mkdir -p "$LBL"
 node "$DIR/generate-labels.mjs" "$LBL"
