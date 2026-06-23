@@ -16,7 +16,9 @@
  *   - Playlist         (Spotify set)    → bins (the "Vibes" series bin)
  *   - GenreDividerCard                  → bins (the second, genre-divider bin; from "Various")
  *   - Release          (Beatport)       → counter (purchase CTA surface)
- *   - Update                            → corkboard (by the entrance — see stations.ts)
+ *   - Update                            → PARKED (the corkboard station was removed from the
+ *                                          walk-through; updates are to be re-homed onto the
+ *                                          counter later — see UPDATES below)
  *
  * GENRE IS A FIRST-CLASS TAG (CD decision 1): content items carry `genres`, and station
  * population is rule-driven off those tags — so the SAME item can surface at more than one
@@ -120,12 +122,12 @@ export interface Release {
 }
 
 /**
- * Update kinds (CD decision 3): the corkboard holds ALL updates, each flyer-styled by `kind`.
+ * Update kinds (CD decision 3): UPDATES holds ALL updates, each flyer-styled by `kind`.
  * `kind` is a visual/categorisation axis, NOT a filter — only some updates are gigs.
  */
 export type UpdateKind = "gig" | "release" | "announcement" | "press";
 
-/** A corkboard update — a dated note, flyer-styled by `kind`. No update type existed before. */
+/** A dated update note, flyer-styled by `kind`. (Was the corkboard's content; now parked.) */
 export interface Update {
   id: string;
   /** Display / ISO date. Placeholder until the port. */
@@ -257,6 +259,11 @@ export const RELEASES: readonly Release[] = [
   },
 ] as const;
 
+// PARKED CONTENT: these were the corkboard station's updates. That station has been removed
+// from the /store walk-through (it's being reconceived as content on the counter scene), so
+// nothing in /store renders these today; they remain surfaced on /music and are kept here
+// intact, ready to be re-homed onto the counter later. Do not delete.
+//
 // All 16 updates ported as-is (no culling — culling is a later editorial call). `kind` is set
 // from each update's content (gig/release/announcement/press). `date` is the source display
 // string. Full text is preserved in `body`; in-page section anchors (#anchor-*) don't exist in

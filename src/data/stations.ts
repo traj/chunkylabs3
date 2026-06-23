@@ -13,7 +13,6 @@
 export type StationId =
   | "street"
   | "door"
-  | "corkboard"
   | "counter"
   | "left-bins"
   | "right-bins"
@@ -61,10 +60,11 @@ export interface StationDomLayer {
  * station's `transitionIn` clip plays and the new scene swaps IN PLACE. `direction` is an
  * optional layout hint for placing the CTA.
  *
- * INVARIANT: no exit targets a station whose transition clip does not exist yet, so an
- * unfilmed scene stays unreachable. Right now that means `to` is NEVER `"corkboard"` —
- * there is no public/transitions clip for it (every other station has at least a labeled
- * placeholder encode on disk).
+ * INVARIANT: an exit never targets a station whose transition-clip files don't exist on
+ * disk, so an unfilmed scene can't become a destination you arrive at into a black frame.
+ * Every station in STATIONS now has at least a labeled placeholder encode under
+ * public/transitions. (Door's forward edge is held absent for a separate, product reason —
+ * see its `exits` comment — not because of a missing clip.)
  */
 export interface StationExit {
   /** CTA label, e.g. "Come in →". */
@@ -96,7 +96,7 @@ export interface Station {
   /**
    * On-screen directional ways out of this station (click-to-navigate, no scroll).
    * Additive and optional — a station with no exits is a dead end. See {@link StationExit}
-   * for the corkboard-is-unreachable invariant.
+   * for the no-exit-to-an-unfilmed-scene invariant.
    */
   exits?: readonly StationExit[];
 }
@@ -105,7 +105,7 @@ export interface Station {
  * THE ordered sequence. Order in this array is authoritative — derive everything
  * (navigation, progress, prev/next) from it. Do not hard-code order anywhere else.
  *
- * street → door push-in → corkboard → counter/clerk → left bins → right bins → mixtape shelf
+ * street → door push-in → counter/clerk → left bins → right bins → mixtape shelf
  *
  * `transitionIn` is `null`/empty for now: placeholders only, no real video.
  */
@@ -143,41 +143,16 @@ export const STATIONS: readonly Station[] = [
       heading: "Come in",
       body: "Mind the step.",
     },
-    // Forward (→ corkboard) is intentionally omitted: corkboard has no clip yet, so the
-    // walk-through is gated here until it's filmed. Back to the street works.
+    // Forward edge deliberately absent this pass. With the corkboard station removed, counter
+    // is door's next station — but the store stays at street ↔ door for now (counter isn't
+    // wired as a reachable destination yet). Back to the street works.
     exits: [{ label: "← Back to the street", to: "street", direction: "back" }],
-  },
-  {
-    // The gig-flyer corkboard, just inside the entrance. It surfaces UPDATES (see
-    // src/data/inventory.ts) — ALL updates, flyer-styled by `kind`, not just gigs.
-    id: "corkboard",
-    order: 3,
-    label: "The Corkboard",
-    slug: "corkboard",
-    description:
-      "A cork notice board just inside the entrance, papered with gig flyers and news.",
-    transitionIn: {
-      av1Src: "/transitions/_placeholder/corkboard.av1.mp4",
-      h264Src: "/transitions/_placeholder/corkboard.h264.mp4",
-      poster: "/transitions/_placeholder/corkboard.poster.jpg",
-      durationSec: 3,
-    },
-    dom: {
-      heading: "On the board",
-      body: "Flyers, drops, and news. (Updates are placeholders for now.)",
-    },
-    // Defined linearly for when corkboard is filmed; unreachable today (nothing routes IN).
-    // Neither exit targets corkboard, so the invariant holds.
-    exits: [
-      { label: "← Back to the door", to: "door", direction: "back" },
-      { label: "To the counter →", to: "counter", direction: "forward" },
-    ],
   },
   {
     // The counter is the purchase CTA surface — it surfaces RELEASES (Beatport) from
     // src/data/inventory.ts.
     id: "counter",
-    order: 4,
+    order: 3,
     label: "The Counter",
     slug: "counter",
     description: "The clerk looks up from behind the counter.",
@@ -191,12 +166,13 @@ export const STATIONS: readonly Station[] = [
       heading: "The Counter",
       body: "Ask the clerk anything. (Voice lines are placeholders for now.)",
     },
-    // Back would be corkboard (no clip) → stripped. Forward to the left bins.
+    // No back exit: the corkboard station that used to sit behind the counter is gone, and
+    // door doesn't route forward yet, so counter is islanded for now. Forward to the left bins.
     exits: [{ label: "Left bins →", to: "left-bins", direction: "forward" }],
   },
   {
     id: "left-bins",
-    order: 5,
+    order: 4,
     label: "Left Bins",
     slug: "left-bins",
     description: "Crates down the left wall. Flip through the records.",
@@ -217,7 +193,7 @@ export const STATIONS: readonly Station[] = [
   },
   {
     id: "right-bins",
-    order: 6,
+    order: 5,
     label: "Right Bins",
     slug: "right-bins",
     description: "More crates down the right wall.",
@@ -238,7 +214,7 @@ export const STATIONS: readonly Station[] = [
   },
   {
     id: "mixtape-shelf",
-    order: 7,
+    order: 6,
     label: "Mixtape Shelf",
     slug: "mixtape-shelf",
     description: "Hand-made mixtapes on the back shelf. One of a kind.",
