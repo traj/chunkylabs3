@@ -172,11 +172,13 @@ export const STATIONS: readonly Station[] = [
       heading: "The Counter",
       body: "Ask the clerk anything. (Voice lines are placeholders for now.)",
     },
-    // Reachable now that the real counter clip exists (street → door → counter). The forward
-    // exit to the bins stays OFF this pass — those walls are still synthetic placeholders, and
-    // only door→counter goes live — so the counter is the frontier: you can only head back to
-    // the door from here for now. (Re-enable a forward exit when the next real wall ships.)
-    exits: [{ label: "← Back to the door", to: "door", direction: "back" }],
+    // Reachable hub (street → door → counter). The Mixes/left wall is now real, so counter↔Mixes
+    // goes live — turn left. The other walls (right/Crate, ahead/Vibes) are still synthetic
+    // placeholders, so they stay OFF: the reachable graph is street ↔ door ↔ counter ↔ Mixes.
+    exits: [
+      { label: "← Back to the door", to: "door", direction: "back" },
+      { label: "← To the mixes", to: "left-bins", direction: "left" },
+    ],
   },
   {
     id: "left-bins",
@@ -185,19 +187,24 @@ export const STATIONS: readonly Station[] = [
     slug: "left-bins",
     description: "Crates down the left wall. Flip through the records.",
     transitionIn: {
-      av1Src: "/transitions/_placeholder/left-bins.av1.mp4",
-      h264Src: "/transitions/_placeholder/left-bins.h264.mp4",
-      poster: "/transitions/_placeholder/left-bins.poster.jpg",
-      durationSec: 3,
+      // Real encode (counter → Mixes wall, a left pan/turn, 8s). This is the left/Mixes wall —
+      // SoundCloud mixes / live sets — reached by turning left from the counter hub. AV1
+      // av01.0.08M.08 + H.264 avc1.4D4028, matching the engine's <source> types (codec strings
+      // parsed from the av1C/avcC boxes).
+      av1Src: "/transitions/mixes/mixes.av1.mp4",
+      h264Src: "/transitions/mixes/mixes.h264.mp4",
+      poster: "/transitions/mixes/mixes.poster.jpg",
+      durationSec: 8,
     },
     dom: {
       heading: "Left Bins",
       body: "Dig through the crates.",
     },
-    exits: [
-      { label: "← The counter", to: "counter", direction: "back" },
-      { label: "Right bins →", to: "right-bins", direction: "forward" },
-    ],
+    // Return to the counter (no return clip — clicking just sets the counter active again;
+    // per the play-once engine that re-plays the counter's arrival clip from the start).
+    // Forward → right/Crate stays OFF: that wall is still a synthetic placeholder, so only
+    // counter↔Mixes is live this pass.
+    exits: [{ label: "← Back to the counter", to: "counter", direction: "back" }],
   },
   {
     id: "right-bins",
