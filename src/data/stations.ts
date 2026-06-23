@@ -187,14 +187,14 @@ export const STATIONS: readonly Station[] = [
     slug: "left-bins",
     description: "Crates down the left wall. Flip through the records.",
     transitionIn: {
-      // Real encode (counter → Mixes wall, a left pan/turn, 8s). This is the left/Mixes wall —
-      // SoundCloud mixes / live sets — reached by turning left from the counter hub. AV1
-      // av01.0.08M.08 + H.264 avc1.4D4028, matching the engine's <source> types (codec strings
-      // parsed from the av1C/avcC boxes).
+      // Real encode (counter → Mixes wall, a left pan/turn, ~4s — re-encoded at 2x from the
+      // original 8s). This is the left/Mixes wall — SoundCloud mixes / live sets — reached by
+      // turning left from the counter hub. AV1 av01.0.08M.08 + H.264 avc1.4D4028, matching the
+      // engine's <source> types (codec strings parsed from the av1C/avcC boxes).
       av1Src: "/transitions/mixes/mixes.av1.mp4",
       h264Src: "/transitions/mixes/mixes.h264.mp4",
       poster: "/transitions/mixes/mixes.poster.jpg",
-      durationSec: 8,
+      durationSec: 4,
     },
     dom: {
       heading: "Left Bins",
