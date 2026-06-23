@@ -10,11 +10,13 @@ import { usePlaybackUnlock } from "./PlaybackUnlock";
  * transition layer. Built strictly to CLAUDE.md "Never do this" + research §Q1–Q3:
  *
  *  - Ordered <source>: AV1 first, H.264 last, each with the FULL codecs string. Never AV1-only.
- *  - Attributes: muted playsInline autoplay loop preload="auto" + poster. `muted` is also
- *    mirrored in JS before play() (iOS).
- *  - Plays on station-enter via the EXISTING IntersectionObserver gate in StoreWalkthrough
- *    (passed down as `activeIndex`) — driven by .play() (not the autoplay attribute alone)
- *    so rejection is catchable.
+ *  - Attributes: muted playsInline autoplay preload="auto" + poster. `muted` is also
+ *    mirrored in JS before play() (iOS). NOT looped — see below.
+ *  - Play-once-hold: the clip plays through exactly ONCE on becoming active, then rests on
+ *    its final frame (the arrival scene) until the visitor navigates away. Re-activating a
+ *    scene rewinds and plays it once more from the start (per-activation, not once-ever).
+ *  - Plays on becoming active (passed down as `activeIndex`) — driven by .play() (not the
+ *    autoplay attribute alone) so rejection is catchable.
  *  - ALWAYS .play().catch() → render a real tap-to-play overlay. This is also the
  *    Low-Power-Mode path (LPM is undetectable). The first successful gesture unlocks the
  *    session for the other clips (see PlaybackUnlock).
@@ -66,6 +68,11 @@ export function StationTransition({
     const v = videoRef.current;
     if (!v) return;
     v.muted = true; // mirror muted in JS before play() — iOS requirement
+    // Play-through is ONCE, but per-activation: rewind to the start before playing so a
+    // scene revisited later plays again from frame 0 — never resumed mid-clip, never stuck
+    // on the held final frame left over from its previous visit. (This is the only entry
+    // point that starts the clip, so the reset lives here for all callers.)
+    v.currentTime = 0;
     const p = v.play();
     if (p !== undefined) {
       p.then(() => {
@@ -123,13 +130,16 @@ export function StationTransition({
 
   return (
     <div className="absolute inset-0">
+      {/* No `loop`: a transition is an ARRIVAL. It plays through ONCE on activation, then
+          holds on its final decoded frame as the still "you are here" scene until the
+          visitor clicks an exit. (Holding is the default no-loop behaviour — the element
+          pauses on the last frame at `ended`; we deliberately add NO onEnded reset/hide.) */}
       <video
         ref={videoRef}
         className="h-full w-full object-cover"
         muted
         playsInline
         autoPlay
-        loop
         preload="auto"
         poster={asset.poster}
         onLoadedData={() => {
