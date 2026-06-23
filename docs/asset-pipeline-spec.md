@@ -1,9 +1,18 @@
 # chunkylabs — asset pipeline spec (gen → encode → QA → slot-in)
 
-_Spec only. Nothing built yet. Defines the contract that takes a real creative idea
-all the way to a clip the transition engine can ship. The engine is already
-machinery-complete and desktop-verified; this is the track that fills its reserved
-slots with real footage instead of the synthetic "DO NOT SHIP" placeholders._
+_The contract that takes a real creative idea all the way to a clip the transition
+engine can ship. The engine is machinery-complete and desktop-verified; this track
+fills its slots with real footage instead of the synthetic "DO NOT SHIP" placeholders._
+
+> **STATUS — 2026-06-23 (pt.2): the four-walls navigation pivot supersedes parts of
+> this spec.** `/store` is now a **click-navigated, zero-scroll four-walls hub**, not a
+> scroll walk-through, so the Stage-1 shot list below was re-cut from a 5-clip linear
+> chain into **outbound clips from the counter hub** (see the rewritten Stage 1). Three
+> clips are now real and live — **street→door**, **door→counter** (both push-ins), and
+> **counter→Mixes** (the first pivot) — proving the pipeline end-to-end. The
+> **counter→wall pivot recipe is LOCKED** (Cinema Studio start+end frames) and the
+> **2× speed pass** is the encode standard for pivots; both are written into Stages 1–2.
+> Full history: `docs/2026-06-23-session-pt2-mixes-wall-cinema-studio-pivot.md`.
 
 References fleet capabilities documented in `agent_machine/docs/{media-pipeline-
 orchestration-plan,comfyui}.md` — this is the chunkylabs-specific specialization of
@@ -32,41 +41,68 @@ for — keep the LLM/human out of the mechanical stages.
 
 ## Stage 1 — Gen
 
-**Primary engine: Higgsfield (Veo 3.1 Lite).** 8 cr/clip, 3 concurrent jobs, ~553
-credits on hand. The five station *transitions* are short play-through camera moves —
-exactly Higgsfield's strength.
+**The shot list is a four-walls hub, not a linear chain.** `/store` places the visitor
+at the **counter hub**; they click to travel OUT to a wall, and the outbound clip
+starts at the counter and ends at the wall. The lead-in (street → door → counter) is
+two push-ins; the three walls hang off the counter. **Four outbound clips total**, one
+inbound-less start (The Street mounts no video):
 
-**The shot list — five transitions, in STATIONS order:**
+| # | Transition | Type | Camera intent | Status |
+|---|---|---|---|---|
+| 1 | street → door | push-in | Forward push toward the storefront, neon, rain on glass | **real (49a43fb)** |
+| 2 | door → counter | push-in | Through the door, swing toward the clerk counter (kept full 8s — background car is part of the beat) | **real (789ef95)** |
+| 3 | counter → **Mixes** (left) | **pivot** | Turn LEFT to the mixes/tapes wall (absorbed the old mixtape-shelf identity) | **real (91b7a1a), 2×→~4s (49b0c11)** |
+| 4 | counter → **Crate** (right) | **pivot** | Turn RIGHT to the crate-dig wall — invent a *distinct* right-side wedge | pending |
+| 5 | counter → **Vibes** (ahead) | push-in | Move AHEAD into the Vibes space — easiest (least invention) | pending |
 
-| # | Transition | Camera intent | Notes |
-|---|---|---|---|
-| 1 | street → door | Push-in toward the storefront, neon, rain on glass | The "enter" beat |
-| 2 | door → counter | Through the door, bell, swing toward the clerk counter | |
-| 3 | counter → left bins | Pan/track left into the record bins | |
-| 4 | left bins → right bins | Sweep across the room, bins to bins | |
-| 5 | right bins → mixtape shelf | Track to the back wall / mixtape shelf | The "take it all home" beat |
+The walls live on the scaffold station ids `left-bins` (=Mixes), `right-bins` (=Crate),
+`mixtape-shelf` (=Vibes); the id→wall rename is a deferred design thread. An exit is
+wired only once the destination's real clip exists, so unfilmed walls stay unreachable.
 
-Station 1 (The Street) has **no inbound transition** by design — you arrive there.
-So it's five clips, not six. (Confirmed in the engine: station 1 mounts no video.)
+### Two gen recipes — push-in vs pivot (LOCKED 2026-06-23)
 
-**Secondary: ComfyUI / HunyuanVideo on powerpuff** (`192.168.7.251:8188`) — for
-ambient loops, clerk idle motion, or texture *stills* (Flux.1), not the full-screen
-transitions (it tops out around 512×320 / 25 frames — too small to be the hero
-layer). Treat as optional v1; the transitions are the spine.
+- **Axial moves (push-ins): Higgsfield Veo 3.1 Lite, prompted camera.** Camera motion
+  is **prompt-driven** on the Create Video screen (Veo offers only "GENERAL" — there is
+  **no "Dolly In" preset**; Higgsfield "presets" are content/genre *style* templates,
+  not camera-motion). Push toward a fixed scene with positive-state prompt framing
+  ("rain has just stopped"). Cheap (~8–12 cr); this is how door & counter were shot.
 
-**Gen-stage rolls (the deterministic part):** per transition, roll N takes from a
-fixed prompt at concurrency ≤ 3, collect `result_url`s. This is bucket-1 plumbing —
-the orchestration runner's `roll → await → fetch` stages, or for five clips, a
-hand-run loop. **The only judgment is picking which take is "the one"** (framing,
-motion that reads, room for the DOM layer to sit legibly on top).
+- **Sideways pivots (counter→wall turns): Higgsfield Cinema Studio with start+end
+  frames.** **Prompted panning does NOT work for this content** — three escalating
+  failures proved it (Veo → geometry melt; Kling → held geometry but invented an
+  off-frame window; Kling+dim → still inventing). Root cause: a pan reveals off-frame
+  area and the model hallucinates what's there; no prompt fully controls invention.
+  **The fix is to pin both ends:** start frame = **the counter's held final frame**
+  (extracted from the counter clip via `ffmpeg -sseof -0.1`), end frame = **the
+  destination-wall still** (Meshy NBP), Cinema Studio tweens between the two pinned
+  images, Camera/Lens/Aperture on Auto. ~80 cr/clip — justified: pay once for control
+  instead of repeatedly for "meh". Real per-shot camera control only lives here.
 
-**Budget reality:** 5 transitions × a handful of rolls each × 8 cr ≈ trivial against
-553 credits. Cost is not a constraint here; take-quality is.
+- **Invented in-between room is CANON, not a bug.** The pivot tween travels through
+  invented shop geometry (a left-side wedge between counter and wall) — it reads as the
+  shop being *deeper than the storefront implies*, and Al B banked it as canon.
+  **Consequence rule:** each wall pivot invents the wedge to *that* wall; wedges must
+  not overlap or imply each other (Left/Mixes wedge is built; the Right/Crate wedge must
+  read as a distinct right-side space; Vibes/ahead is a push-in so it invents least).
 
-**Output reality — and why it's not done:** Higgsfield hands back its own mp4
-(whatever codec/params it chooses); ComfyUI hands back animated WEBP. **Neither is
-shippable as-is** — the engine requires ordered AV1→H.264 sources with file-accurate
-codecs strings. That's Stage 2, and it's non-negotiable.
+### Still-frame gen (the wall destinations)
+
+Wall stills are **Meshy NBP, prompt-only** (no reference image — a counter ref drags
+counter geometry in; warm-world continuity is carried by prompt language). Lessons
+banked: compose walls in **zones** (e.g. crates below / shelved above) so the eye gets
+a reading order, not a uniform "wall of books"; and aim spine text at **ILLEGIBILITY,
+not blankness** ("blurred, smudged, illegible — texture and colour, no readable words")
+— positive-state framing beats hard negation. The v2 **clerk is a composite layer**,
+not baked into the counter still (the still leaves a clerk-shaped negative space).
+
+**Secondary: ComfyUI / HunyuanVideo on powerpuff** (`192.168.7.251:8188`) — ambient
+loops / clerk idle / texture stills (Flux.1), not the hero transitions (tops out ~512×320
+/ 25 frames). Optional v1; the transitions are the spine.
+
+**Output reality — why gen isn't "done":** Higgsfield hands back its own mp4 (whatever
+codec/params it chose); ComfyUI hands back animated WEBP. **Neither is shippable** — the
+engine requires ordered AV1→H.264 sources with file-accurate codec strings. That's
+Stage 2, non-negotiable.
 
 ---
 
@@ -86,9 +122,20 @@ otherwise keeps the exact spec it already encodes to.
   cleanly).
 - **H.264:** libx264, Main profile, broadly compatible level, `+faststart`. **The
   mandatory floor** — never ship AV1-only. Parse `avcC` for the real string.
-- **Poster:** first frame, jpg.
-- Target 1080p, ~2–4s, GOP ~2s (not keyframe-dense — these are play-through, never
-  scrubbed).
+- **Poster:** first frame, jpg. **KNOWN BUG, deferred:** on a *pivot*, frame 1 is the
+  *counter* (start of the turn), so the poster shows where you LEFT, not the wall you
+  land on. Non-blocking (engine plays on gesture + holds the end frame), but the
+  encode-hardening fix is **poster = LAST frame for held-arrival clips**.
+- Target 1080p, GOP ~2s (not keyframe-dense — these are play-through, never scrubbed).
+- **2× SPEED PASS for pivots (LOCKED standard).** Raw Cinema Studio pivots run ~8s,
+  which feels slow in a click-hub. Halve them with ffmpeg `setpts=PTS/2.0` (drops dup
+  frames cleanly — no judder on the encoded output) → ~4s. Snappier suits click-nav and
+  the "deeper shop" character survives. After the 2× pass the clip is ~4s, so the encode
+  uses the **default TRIM=4** (no `sed` override). Codec strings stay file-accurate
+  (`av01.0.08M.08` / `avc1.4D4028` — confirmed on three real encodes now). **Note:** an
+  in-place re-encode overwrites the *tracked* binaries, so any later "data-only"
+  `durationSec` change must commit the new binaries alongside or the repo pairs new
+  metadata with old assets (learned on the Mixes 2× pass, 49b0c11).
 
 **This stage is pure deterministic — a script, no agent.** Per the fleet plan's
 core argument, routing `ffmpeg encode → parse boxes → write files` through an LLM
@@ -137,33 +184,55 @@ embarrassment.
 The engine is already proven, so this is genuinely mechanical — swap file paths,
 remove the placeholder gate. When real encoded clips exist:
 
-- Place encoded files under `public/transitions/<transition>/` (replacing
-  `_placeholder/`), each with `.av1.mp4`, `.h264.mp4`, `.poster.jpg` (+ vertical
-  variant if Decision lands there).
-- Update the `TransitionAsset` entries in the stations data (`av1Src`, `h264Src`,
-  `poster`) to point at the real files.
-- Delete the synthetic placeholder clips + the "DO NOT SHIP" generator, or keep them
-  behind a flag for regression. (Decision: keep one synthetic set as a test fixture?)
-- `npm run build` clean; `/store` plays real clips; `/music` still video-free.
+- Place encoded files under `public/transitions/<id>/` (a *new* dir per wall, e.g.
+  `door/`, `counter/`, `mixes/`), each with `.av1.mp4`, `.h264.mp4`, `.poster.jpg`
+  (+ vertical variant once that decision lands). The `_placeholder/` set **stays** — it
+  backs the unbuilt walls and is the fixture.
+- Update that station's `TransitionAsset` (`av1Src`, `h264Src`, `poster`, `durationSec`)
+  to the real files. Match the pattern an already-real station uses.
+- **Un-gate navigation:** wire the exit that leads to the now-real wall (and a back exit
+  for the return), reusing `goToId`. Before this, the wall had no inbound exit so it was
+  unreachable. **Do not enable an exit into any still-synthetic wall** — and if the
+  newly-reachable station already had a forward exit into a placeholder, drop/redirect it
+  (the coupled decision made on counter→Mixes, 789ef95 / 91b7a1a).
+- `npm run build` clean; `/store` plays the real clip and holds its end frame; `/music`
+  still video-free. Parse `av1C`/`avcC` read-only to confirm the codec strings match the
+  engine constants; commit real paths staged from `git status`, not typed from a report.
 
-This becomes a copy-paste CC prompt the moment Stage 3 passes for at least the first
-clip — no need to wait for all five (slot them in as they clear QA).
+This becomes a copy-paste CC prompt the moment Stage 3 passes for any one wall — slot
+clips in one at a time as they clear QA (this is exactly how door, counter, and Mixes
+shipped — one scoped slot-in prompt each).
 
 ---
 
-## Decisions needed (before or during gen)
+## Decisions
+
+**Resolved by the build (2026-06-23):**
+
+- **Pipeline weight → hand-run.** The lead-in + first pivot were hand-run gen→encode→
+  slot-in; no orchestration runner needed for a four-clip project.
+- **ComfyUI in v1 → no.** Transitions-first; ambient/texture is later.
+- **Synthetic clips → KEEP as fixture.** Slot-in does *not* delete `_placeholder/` or
+  `encode.sh` — the synthetic set still backs the unbuilt walls (Crate, Vibes) and is
+  the encoder/regression fixture. Real clips live in their own `public/transitions/<id>/`
+  dirs alongside it.
+- **Take-count → bounded by review, not credits.** In practice stills took ~3–4 batches
+  to land the composition; clips one-or-two takes once the recipe was right.
+
+**Still open:**
 
 1. **Mobile aspect ratio** — landscape-only + cover-crop / vertical variants /
-   encode-stage crop. (Stage 2.) Highest-impact; shapes gen *and* the asset model.
-2. **Pipeline weight** — for five clips, hand-run the gen+encode loop, or route it
-   through the planned media-pipeline orchestration runner? YAGNI says hand-run now,
-   promote to the runner only if the chunkylabs clips become a repeating job. Leaning
-   hand-run.
-3. **ComfyUI in v1 or not** — ambient loops / clerk idle as a v1 layer, or ship
-   transitions-only first and add texture later? Leaning transitions-first.
-4. **Synthetic clips: delete or keep as fixture** at slot-in. (Stage 4.)
-5. **Take-count per transition** — how many Higgsfield rolls per shot before picking.
-   Cheap on credits; bounded only by review time.
+   encode-stage crop. (Stage 2.) Still unbuilt; folded into encode hardening (the
+   vertical-crop branch). Highest-impact remaining gen/asset decision.
+2. **Return behavior (NEW — first proposed engine change since the nav pivot).** Returns
+   need no separate clips, but with play-once-hold the engine **re-plays the destination's
+   arrival clip** on return (it does NOT snap-cut to the held frame). Al B wants returns
+   to play the pivot **reversed** (spatially "turning back"). That's an **engine change**
+   (the engine must know "this is a return" and pick a reversed asset variant) *and* an
+   asset implication (encode a reversed variant per pivot). Settle before genning more
+   walls — it sets the pattern for all returns. Options: (a) accept replay-arrival,
+   (b) reversed-clip returns (engine + reversed encode per pivot), (c) instant snap-cut
+   (engine change, but motion-on-return is wanted, so probably not).
 
 ---
 
@@ -178,10 +247,18 @@ clip — no need to wait for all five (slot them in as they clear QA).
 
 ## Next concrete step
 
-Lock **Decision 1 (mobile aspect ratio)** — it's the only one that changes what you
-generate, so it has to be settled before the first Higgsfield roll. Then compose the
-prompt for **transition 1 (street → door)** as the pipeline's first end-to-end test:
-gen a few takes → encode the chosen one through the (real-input) encode stage → QA it
-on the Pro iPhone you have now (partial pass) → slot it into station 2 and watch a
-real clip play in the engine. One clip all the way through proves the whole pipeline
-before committing to all five.
+The pipeline is proven end-to-end (three real clips). Remaining order:
+
+1. **Settle the return-behavior decision** (Decision 2, above) — it's an engine change
+   that sets the pattern for ALL returns and decides whether each pivot needs a reversed
+   encode, so it's cheaper to lock once than retrofit.
+2. **Crate wall (RIGHT)** on the locked pivot recipe: counter-endframe → Crate-wall Meshy
+   still → Cinema Studio (RIGHT turn, a *distinct* right-side wedge) → 2× speed → encode →
+   slot-in + un-gate counter→Crate.
+3. **Vibes wall (AHEAD)** — a push-in (not a pivot), the easiest of the three: Veo +
+   prompted forward push → encode → slot-in.
+
+Two walls to a fully navigable store. Still outstanding regardless: the **on-device
+gauntlet** (Stage 3.2 — hardware-blocked on a non-AV1 iPhone + LPM) and **encode
+hardening** (vertical-crop branch, poster=last-frame fix, codec self-test, a built-in
+2× flag for pivots).

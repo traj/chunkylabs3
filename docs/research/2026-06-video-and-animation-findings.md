@@ -9,6 +9,24 @@
 
 **Scope note:** This document contains *recommendations only*. Final calls happen outside this task. Where primary sources are thin, stale, or in conflict, that is flagged inline rather than smoothed over. A few load-bearing facts were independently re-verified by the author; those are marked **[verified 2026-06-12]**.
 
+> **BUILD DELTAS (added 2026-06-23 — findings below are unchanged; these are the design
+> calls the build made *on top of* this research, where they diverge from the literal
+> recommendation):**
+> - **No `loop`.** This doc recommends `autoplay loop muted playsinline` as the iOS-stable
+>   pattern (Q2). The build ships the iOS-critical attributes (`muted playsInline autoplay`
+>   + JS-mirrored `muted`) but **drops `loop`**: transitions play once and **hold their final
+>   frame** (a transition is an arrival, not an ambient loop). Engine decision, commit
+>   `9fb0417`; see CLAUDE.md "Never do this" §3.
+> - **Click-to-navigate, not scroll-into-view.** The Q2/Q3 recommendation triggers
+>   play-through on "tap or scroll-into-view (IntersectionObserver-gated)". `/store` is now a
+>   **zero-scroll, click-navigated four-walls hub** — playback is gated by a click that sets a
+>   scene active, and the IntersectionObserver advance was removed (Fork B, commit `84e9914`).
+>   The "never bind `currentTime` to scroll" / play-through-over-scrub findings are unchanged
+>   and still load-bearing.
+> - **Decoder management** is done by mounting only an **active±1 window** (out-of-window
+>   clips drop their `<source>`s + `.load()`), realising this doc's "keep concurrent videos
+>   low / null src on finished clips" guidance (Q2.5).
+
 ---
 
 ## How the four questions hang together (read this first)

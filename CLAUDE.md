@@ -4,15 +4,22 @@ Guidance for working in this repo. Read it before touching video, scroll, or ani
 
 ## What this is
 
-**chunkylabs** — a music showcase site built as an *interactive record store visit*. The
-visitor moves through fixed camera stations (street → door push-in → counter/clerk →
-left bins → right bins → mixtape shelf) connected by pre-rendered, **play-through** video
-transitions, with live DOM layers (text, music embeds, CTAs) composited over the video.
+**chunkylabs** — a music showcase site built as an *interactive record store visit*. It is a
+**click-navigated, zero-scroll four-walls hub** (Flash/SWF style): the visitor is placed in
+one full-viewport scene and moves by clicking on-screen directional CTAs. From the **counter
+hub** they turn to the **Mixes** wall (left), **Crate** wall (right), and **Vibes** wall
+(ahead), reached via the **street → door → counter** lead-in. Movement is driven by
+pre-rendered, **play-through** video transitions that play once and **hold their final
+frame**, with live DOM layers (text, music embeds, CTAs) composited over the video.
 
-This repo is currently the **foundation scaffold**: the app stands, the station/data model
-is in place, placeholder stations are navigable in order, and the escape hatch works.
-There is intentionally **no real video, no transition engine, and no real catalog yet** —
-those are later tasks.
+The **play-through transition engine is built and shipping real footage.** Three transitions
+are real (street→door, door→counter, counter→Mixes); the remaining walls (Crate, Vibes) are
+still synthetic "DO NOT SHIP" placeholders and are intentionally **unreachable** until filmed
+(an exit never routes into an unfilmed wall). The real catalog is ported into
+`src/data/inventory.ts`. Stations still carry their scaffold ids
+(`street/door/counter/left-bins/right-bins/mixtape-shelf`); the id→wall rename
+(e.g. `left-bins` *is* the Mixes wall) is a deferred design thread. The dated session logs in
+`docs/` and `docs/asset-pipeline-spec.md` carry the build history and the asset recipe.
 
 The audience is **majority mobile, iOS-heavy**. iOS Safari is the constraint that decides
 the architecture. Every video/animation decision traces back to the research in
@@ -51,7 +58,8 @@ npm run start    # serve the production build
 Key routes:
 
 - `/` — entry screen (two first-class paths: *Enter the store* and *Skip intro → music*).
-- `/store` — the walk-through (placeholder stations, navigable by scroll or prev/next).
+- `/store` — the click-navigated four-walls hub (zero-scroll; on-screen directional CTAs;
+  real clips on the reachable walls, synthetic placeholders elsewhere).
 - `/music` — the escape hatch: plain, server-rendered inventory. No video dependency.
 
 ## Architecture & layout
@@ -69,22 +77,31 @@ src/
     providers/
       SmoothScrollProvider.tsx   Lenis ⇄ GSAP wiring (single rAF loop). THE scroll plumbing.
     stations/
-      StationFrame.tsx           One station placeholder: empty transition layer + DOM layer.
+      StationFrame.tsx           One full-viewport scene: transition <video> + DOM layer +
+                                 directional exit CTAs. Active scene visible; ±1 neighbours
+                                 mounted (decoder window) but hidden + inert.
+      StationTransition.tsx      THE play-through engine: ordered AV1→H.264 <video>, play-once-
+                                 hold, decoder windowing (active±1), tap-to-play fallback.
+      PlaybackUnlock.tsx         Session media-unlock context (first gesture unlocks autoplay).
     store/
-      StoreWalkthrough.tsx       Composes STATIONS in order; prev/next; active tracking.
-      ScrollProgressBar.tsx      Plumbing smoke-test (ScrollTrigger↔Lenis). Deletable.
+      StoreWalkthrough.tsx       Click-nav controller: goToId() sets active; renders only the
+                                 active±1 window; locks scroll on /store (Lenis stays global).
   lib/
     gsap.ts                 The ONLY place GSAP plugins are registered (window-guarded).
   data/
-    stations.ts             STATIONS = the single source of walk-through order + types.
-    inventory.ts            Records / bins / mixtapes / clerk lines — types + PLACEHOLDERS.
+    stations.ts             STATIONS = single source of station set + types + exits (nav graph).
+    inventory.ts            Releases / playlists / mixtapes / updates / clerk lines — REAL
+                            (ported) data + types. Server-renderable; no video/browser deps.
 ```
 
-**Data flow / source of truth.** `src/data/stations.ts` `STATIONS` is authoritative for
-order. Navigation, prev/next, the progress indicator, and the rendered sequence all derive
-from it — never hard-code station order anywhere else. `src/data/inventory.ts` is the data
-behind `/music` and (later) the bins/mixtape stations; it is pure data with no browser or
-video dependency, so it stays server-renderable.
+**Data flow / source of truth.** `src/data/stations.ts` `STATIONS` is authoritative for the
+station set and each station's `exits` (the click-nav graph). Navigation (`goToId`), the
+active scene, the decoder window, and which scene renders all derive from it — never
+hard-code station order or routes anywhere else. An exit must never target a wall whose
+transition clip doesn't exist yet (it would walk visitors into a "DO NOT SHIP" test pattern),
+so unfilmed walls stay unreachable. `src/data/inventory.ts` is the data behind `/music` and
+(later) the wall content surfaces; it is pure data with no browser or video dependency, so it
+stays server-renderable.
 
 **Scroll/animation plumbing (already wired — extend, don't re-invent):**
 
@@ -96,9 +113,13 @@ video dependency, so it stays server-renderable.
   loop, no double-RAF.
 - All animation lives in `"use client"` components using `useGSAP()` with `{ scope }`.
 
-The transition engine, real video playback, and actual transition animations are **not
-built yet** — `StationFrame` leaves an empty, labeled transition layer where the
-play-through `<video>` will later mount.
+The transition engine is **built** (`StationTransition.tsx`): it mounts the ordered
+AV1→H.264 `<video>`, plays it once on becoming active and **holds the final frame**, manages
+the active±1 decoder window (clips outside it drop their `<source>`s + `.load()`), and falls
+back to tap-to-play. `/store` navigation is **click-only** (`goToId` → set active → swap scene
+in place); the old scroll/IntersectionObserver advance and the prev/next nav were removed
+(Fork B). The Lenis/GSAP scroll plumbing above still drives `/music` and any DOM scrub
+animation — it is **not** what advances the store.
 
 ## Conventions
 
@@ -110,8 +131,9 @@ play-through `<video>` will later mount.
   server components.
 - **Animations:** always `useGSAP()` with `{ scope: ref }`; use `contextSafe` for
   event-/timeout-created animations so Strict Mode cleanup reverts them.
-- **Placeholders are labeled as placeholders.** Don't quietly promote a stand-in to real
-  content; real catalog and real video are separate, deliberate tasks.
+- **Placeholders are labeled as placeholders.** The remaining walls still point at synthetic
+  "DO NOT SHIP" clips; don't quietly promote a stand-in, and don't route an exit into a wall
+  whose real clip doesn't exist yet (real wall clips are separate, deliberate tasks).
 - **After loading async content** (video/images/fonts), call `ScrollTrigger.refresh()` so
   trigger positions stay correct.
 
@@ -121,18 +143,22 @@ These are non-negotiable, drawn directly from the research doc. Do not relax the
 an explicit decision recorded in `docs/research/`.
 
 1. **Never bind `video.currentTime` to scroll.** Transitions are **play-through**, triggered
-   by a tap or scroll-into-view (IntersectionObserver-gated `.play()`). Scrubbing a video's
-   currentTime is the worst-performing path on mobile Safari — don't do it. (Scrubbing DOM
-   transforms with scroll via GSAP/Lenis is fine and expected; only *video* must never be
+   by a click-to-navigate gesture (`goToId` sets the scene active → `.play()`). Scrubbing a
+   video's currentTime is the worst-performing path on mobile Safari — don't do it. (Scrubbing
+   DOM transforms with scroll via GSAP/Lenis is fine and expected; only *video* must never be
    scrubbed.)
 2. **H.264/MP4 is the mandatory floor; never ship AV1-only.** Use ordered `<source>`
    elements: AV1 (Profile 0, 8-bit) → H.264, each with the **full `codecs` string**. iOS has
    no software AV1 decoder, so AV1-only silently fails on most iPhones.
 3. **Never assume autoplay succeeded.** Always `video.play().catch(() => …)` → fall back to
    tap-to-play. Treat **Low Power Mode as undetectable** (no JS API) — design a graceful
-   paused first frame. **Audio/music is tap-gated** (it never autoplays with sound). **Null
-   the `src`** on finished/offscreen clips so paused layers don't hold decode pipelines.
-   Always set `muted playsInline autoplay loop` (and mirror `muted` in JS).
+   paused first frame. **Audio/music is tap-gated** (it never autoplays with sound). **Drop
+   the `<source>`s + `.load()`** on clips outside the active±1 window so paused layers don't
+   hold decode pipelines. Set `muted playsInline autoplay` (and mirror `muted` in JS).
+   **Transitions play once and HOLD their final frame — NOT `loop`** (a transition is an
+   *arrival*; looping reads as "video playing", not "arrived, room still"). Re-arm is
+   per-activation: rewind to 0 + `play()` when a scene becomes active again (engine decision,
+   commit `9fb0417`).
 4. **Lenis only — never also enable GSAP ScrollSmoother.** Both smooth-scroll; running both
    double-lerps. Keep the single-rAF wiring in `SmoothScrollProvider`. `useGSAP()` is used in
    `"use client"` components only.
@@ -146,9 +172,11 @@ an explicit decision recorded in `docs/research/`.
   decision touches codecs, autoplay, scrubbing, or scroll, cite the relevant section rather
   than re-deriving or guessing. If reality conflicts with the doc, update the doc in the same
   change — don't silently diverge.
-- **Don't expand scope.** This is a scaffold. Don't build the transition engine, real video,
-  real catalog, clerk interactivity, audio pipeline, backend/DB/auth/CMS, or Vercel/deploy
-  config unless the task explicitly asks. Each is its own task.
+- **Don't expand scope.** The engine, click-nav, and real catalog now exist — but most of the
+  store does not. Don't build the remaining wall clips (Crate/right, Vibes/ahead), the
+  id→wall rename, reversed-clip returns (the open return-behavior thread), clerk
+  interactivity, audio pipeline, backend/DB/auth/CMS, or Vercel/deploy config unless the task
+  explicitly asks. Each is its own task.
 - **Don't thrash on tooling.** Versions are pinned deliberately; `npm run build` must pass
   clean before you commit. If the build breaks, fix the cause — don't paper over it with
   `// @ts-ignore`, `ignoreDuringBuilds`, or loosened types.

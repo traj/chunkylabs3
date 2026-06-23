@@ -5,6 +5,14 @@ the real station-to-station video transitions so the play-through transition eng
 built and exercised. **They will be replaced by real encodes per the asset track.** Do not
 ship them.
 
+> **STATUS (2026-06-23):** the four-walls navigation pivot re-cut the shot list from the
+> linear chain in the table below into **outbound clips from the counter hub** (see
+> `docs/asset-pipeline-spec.md`). **Real clips now live** for `door`, `counter`, and the
+> Mixes wall (`mixes/`, on the `left-bins` station) — each in its own
+> `public/transitions/<id>/` dir, NOT here. This `_placeholder/` set **stays** as the
+> fixture/encoder for the walls still unbuilt (Crate = `right-bins`, Vibes = `mixtape-shelf`).
+> The table below documents the synthetic fixture's own naming, not the final shot list.
+
 Each clip is an animated `testsrc2` pattern (for obvious motion = play-through) with a
 burned-in label panel naming the transition. One clip per transition, named by the
 destination station id (matching `STATIONS` in `src/data/stations.ts`):
