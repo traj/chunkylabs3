@@ -143,10 +143,13 @@ export const STATIONS: readonly Station[] = [
       heading: "Come in",
       body: "Mind the step.",
     },
-    // Forward edge deliberately absent this pass. With the corkboard station removed, counter
-    // is door's next station — but the store stays at street ↔ door for now (counter isn't
-    // wired as a reachable destination yet). Back to the street works.
-    exits: [{ label: "← Back to the street", to: "street", direction: "back" }],
+    // Forward edge is now live: the real counter clip exists, so door → counter walks the
+    // visitor onto real footage (street → door → counter). The remaining walls still hold
+    // synthetic placeholders, so the reachable chain stops at the counter for now.
+    exits: [
+      { label: "← Back to the street", to: "street", direction: "back" },
+      { label: "To the counter →", to: "counter", direction: "forward" },
+    ],
   },
   {
     // The counter is the purchase CTA surface — it surfaces RELEASES (Beatport) from
@@ -157,18 +160,23 @@ export const STATIONS: readonly Station[] = [
     slug: "counter",
     description: "The clerk looks up from behind the counter.",
     transitionIn: {
-      av1Src: "/transitions/_placeholder/counter.av1.mp4",
-      h264Src: "/transitions/_placeholder/counter.h264.mp4",
-      poster: "/transitions/_placeholder/counter.poster.jpg",
-      durationSec: 3,
+      // Real encode (door → counter push-in, 8s — full length kept on purpose: a car passes
+      // in the background as part of the arrival beat). AV1 av01.0.08M.08 + H.264 avc1.4D4028,
+      // matching the engine's <source> types (codec strings parsed from the av1C/avcC boxes).
+      av1Src: "/transitions/counter/counter.av1.mp4",
+      h264Src: "/transitions/counter/counter.h264.mp4",
+      poster: "/transitions/counter/counter.poster.jpg",
+      durationSec: 8,
     },
     dom: {
       heading: "The Counter",
       body: "Ask the clerk anything. (Voice lines are placeholders for now.)",
     },
-    // No back exit: the corkboard station that used to sit behind the counter is gone, and
-    // door doesn't route forward yet, so counter is islanded for now. Forward to the left bins.
-    exits: [{ label: "Left bins →", to: "left-bins", direction: "forward" }],
+    // Reachable now that the real counter clip exists (street → door → counter). The forward
+    // exit to the bins stays OFF this pass — those walls are still synthetic placeholders, and
+    // only door→counter goes live — so the counter is the frontier: you can only head back to
+    // the door from here for now. (Re-enable a forward exit when the next real wall ships.)
+    exits: [{ label: "← Back to the door", to: "door", direction: "back" }],
   },
   {
     id: "left-bins",
