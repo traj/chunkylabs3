@@ -55,6 +55,26 @@ export interface StationDomLayer {
   cta?: StationCta;
 }
 
+/**
+ * A directional way OUT of a station — the unit of click-to-navigate (the store is
+ * zero-scroll, Flash/SWF style). Clicking an exit makes its `to` station active; that
+ * station's `transitionIn` clip plays and the new scene swaps IN PLACE. `direction` is an
+ * optional layout hint for placing the CTA.
+ *
+ * INVARIANT: no exit targets a station whose transition clip does not exist yet, so an
+ * unfilmed scene stays unreachable. Right now that means `to` is NEVER `"corkboard"` —
+ * there is no public/transitions clip for it (every other station has at least a labeled
+ * placeholder encode on disk).
+ */
+export interface StationExit {
+  /** CTA label, e.g. "Come in →". */
+  label: string;
+  /** Station this exit navigates to. */
+  to: StationId;
+  /** Optional placement hint for the on-screen CTA. */
+  direction?: "forward" | "back" | "left" | "right" | "up" | "down";
+}
+
 export interface Station {
   /** Stable id; also used as the in-page anchor target. */
   id: StationId;
@@ -73,6 +93,12 @@ export interface Station {
   transitionIn: TransitionAsset | null;
   /** DOM layer composited over the scene. */
   dom: StationDomLayer;
+  /**
+   * On-screen directional ways out of this station (click-to-navigate, no scroll).
+   * Additive and optional — a station with no exits is a dead end. See {@link StationExit}
+   * for the corkboard-is-unreachable invariant.
+   */
+  exits?: readonly StationExit[];
 }
 
 /**
@@ -96,6 +122,8 @@ export const STATIONS: readonly Station[] = [
       heading: "chunkylabs",
       body: "A record store that only exists here.",
     },
+    // Forward to the door (street has no back — it's the entry).
+    exits: [{ label: "Come in →", to: "door", direction: "forward" }],
   },
   {
     id: "door",
@@ -115,6 +143,9 @@ export const STATIONS: readonly Station[] = [
       heading: "Come in",
       body: "Mind the step.",
     },
+    // Forward (→ corkboard) is intentionally omitted: corkboard has no clip yet, so the
+    // walk-through is gated here until it's filmed. Back to the street works.
+    exits: [{ label: "← Back to the street", to: "street", direction: "back" }],
   },
   {
     // The gig-flyer corkboard, just inside the entrance. It surfaces UPDATES (see
@@ -135,6 +166,12 @@ export const STATIONS: readonly Station[] = [
       heading: "On the board",
       body: "Flyers, drops, and news. (Updates are placeholders for now.)",
     },
+    // Defined linearly for when corkboard is filmed; unreachable today (nothing routes IN).
+    // Neither exit targets corkboard, so the invariant holds.
+    exits: [
+      { label: "← Back to the door", to: "door", direction: "back" },
+      { label: "To the counter →", to: "counter", direction: "forward" },
+    ],
   },
   {
     // The counter is the purchase CTA surface — it surfaces RELEASES (Beatport) from
@@ -154,6 +191,8 @@ export const STATIONS: readonly Station[] = [
       heading: "The Counter",
       body: "Ask the clerk anything. (Voice lines are placeholders for now.)",
     },
+    // Back would be corkboard (no clip) → stripped. Forward to the left bins.
+    exits: [{ label: "Left bins →", to: "left-bins", direction: "forward" }],
   },
   {
     id: "left-bins",
@@ -171,6 +210,10 @@ export const STATIONS: readonly Station[] = [
       heading: "Left Bins",
       body: "Dig through the crates.",
     },
+    exits: [
+      { label: "← The counter", to: "counter", direction: "back" },
+      { label: "Right bins →", to: "right-bins", direction: "forward" },
+    ],
   },
   {
     id: "right-bins",
@@ -188,6 +231,10 @@ export const STATIONS: readonly Station[] = [
       heading: "Right Bins",
       body: "Keep digging.",
     },
+    exits: [
+      { label: "← Left bins", to: "left-bins", direction: "back" },
+      { label: "Mixtape shelf →", to: "mixtape-shelf", direction: "forward" },
+    ],
   },
   {
     id: "mixtape-shelf",
@@ -206,6 +253,8 @@ export const STATIONS: readonly Station[] = [
       body: "Or just take it all home.",
       cta: { label: "Browse everything →", href: "/music" },
     },
+    // Last station — forward is the /music CTA above; only a back exit here.
+    exits: [{ label: "← Right bins", to: "right-bins", direction: "back" }],
   },
 ] as const;
 

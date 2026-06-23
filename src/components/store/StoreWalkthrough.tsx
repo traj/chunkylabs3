@@ -2,100 +2,71 @@
 
 import { useEffect, useState } from "react";
 import { useLenis } from "lenis/react";
-import { STATIONS } from "@/data/stations";
+import { STATIONS, type StationId } from "@/data/stations";
 import { StationFrame } from "@/components/stations/StationFrame";
-import { ScrollProgressBar } from "@/components/store/ScrollProgressBar";
 import { PlaybackUnlockProvider } from "@/components/stations/PlaybackUnlock";
 
 /**
- * Composes the stations in order and makes the visit navigable.
+ * Composes the stations and makes the visit navigable by CLICK ONLY — no scroll.
  *
- * STATIONS is the single source of order — order, prev/next, and the indicator all derive
- * from it. Navigation is play-through-friendly: native scroll OR prev/next buttons that
- * Lenis-scroll to the adjacent station's anchor.
+ * The store is a Flash/SWF-style zero-scroll experience: the visitor occupies ONE scene
+ * filling the viewport, and on-screen directional CTAs (`station.exits`, rendered by
+ * StationFrame) drive movement. Clicking an exit calls `goToId`, which sets the target
+ * active; its `transitionIn` clip plays and the new scene swaps IN PLACE — zero viewport
+ * motion. STATIONS stays the single source of order.
  *
- * Active-station tracking uses ONE IntersectionObserver (not scroll-scrubbing). The active
- * index is passed down to each StationFrame → StationTransition, which is the single gate
- * that drives each station's play-through video on enter.
+ * Decoder windowing (Fork B layout): we mount only the active scene and its two immediate
+ * neighbors (active±1) — the exact same window StationTransition keeps live sources for
+ * (KEEP_WINDOW = 1). Non-windowed stations are not in the DOM at all, so at most the active
+ * scene + 2 neighbors ever hold a <video>/decoder. The neighbors preload (paused on their
+ * poster) so the next scene's clip is ready the instant it becomes active.
  */
+
+// Mirror StationTransition's KEEP_WINDOW: mount active±1 so the decode budget (~3) holds.
+const KEEP_WINDOW = 1;
+
 export function StoreWalkthrough() {
   const lenis = useLenis();
   const [active, setActive] = useState(0);
   const total = STATIONS.length;
 
+  // /store is true zero-scroll. Lenis is a GLOBAL root provider (it must keep working on
+  // /music), so we don't tear it down — we stop it while /store is mounted and start it
+  // again on unmount. Also pin <html> overflow as a belt-and-braces native-scroll lock.
   useEffect(() => {
-    const sections = STATIONS.map((s) => document.getElementById(s.id)).filter(
-      (el): el is HTMLElement => el !== null,
-    );
-    if (sections.length === 0) return;
+    lenis?.stop();
+    const html = document.documentElement;
+    const prevOverflow = html.style.overflow;
+    html.style.overflow = "hidden";
+    return () => {
+      html.style.overflow = prevOverflow;
+      lenis?.start();
+    };
+  }, [lenis]);
 
-    const io = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries) {
-          if (!entry.isIntersecting) continue;
-          const idx = STATIONS.findIndex((s) => s.id === entry.target.id);
-          if (idx !== -1) setActive(idx);
-        }
-      },
-      { threshold: 0.5 },
-    );
-    sections.forEach((el) => io.observe(el));
-    return () => io.disconnect();
-  }, []);
-
-  function goTo(index: number) {
-    const clamped = Math.max(0, Math.min(total - 1, index));
-    const target = STATIONS[clamped];
-    if (lenis) {
-      lenis.scrollTo(`#${target.id}`);
-    } else {
-      document.getElementById(target.id)?.scrollIntoView({ behavior: "smooth" });
-    }
-    setActive(clamped);
+  function goToId(to: StationId) {
+    const idx = STATIONS.findIndex((s) => s.id === to);
+    if (idx !== -1) setActive(idx);
   }
 
   return (
-    <>
-      <ScrollProgressBar />
-
-      <PlaybackUnlockProvider>
-        <main>
-          {STATIONS.map((station, i) => (
+    <PlaybackUnlockProvider>
+      {/* Fixed, full-viewport stage. Scenes are absolutely positioned inside and swap in
+          place; the stage itself never moves and the page has nothing to scroll. */}
+      <main className="fixed inset-0 overflow-hidden bg-black">
+        {STATIONS.map((station, i) =>
+          Math.abs(i - active) <= KEEP_WINDOW ? (
             <StationFrame
               key={station.id}
               station={station}
               index={i}
               total={total}
               activeIndex={active}
+              goToId={goToId}
             />
-          ))}
-        </main>
-      </PlaybackUnlockProvider>
-
-      <nav
-        aria-label="Walk-through navigation"
-        className="fixed inset-x-0 bottom-0 z-40 flex items-center justify-center gap-4 border-t border-white/10 bg-black/60 px-4 py-3 backdrop-blur"
-      >
-        <button
-          type="button"
-          onClick={() => goTo(active - 1)}
-          disabled={active === 0}
-          className="rounded-full border border-white/20 px-4 py-1.5 text-sm disabled:opacity-30"
-        >
-          ← Prev
-        </button>
-        <span className="min-w-40 text-center text-xs uppercase tracking-widest text-white/60">
-          {active + 1} / {total} · {STATIONS[active].label}
-        </span>
-        <button
-          type="button"
-          onClick={() => goTo(active + 1)}
-          disabled={active === total - 1}
-          className="rounded-full border border-white/20 px-4 py-1.5 text-sm disabled:opacity-30"
-        >
-          Next →
-        </button>
-      </nav>
-    </>
+          ) : null,
+        )}
+      </main>
+    </PlaybackUnlockProvider>
   );
 }

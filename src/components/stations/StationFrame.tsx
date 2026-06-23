@@ -1,37 +1,51 @@
+"use client";
+
 import Link from "next/link";
-import type { Station } from "@/data/stations";
+import type { Station, StationId } from "@/data/stations";
 import { StationTransition } from "./StationTransition";
+import { usePlaybackUnlock } from "./PlaybackUnlock";
 
 /**
- * Placeholder for ONE fixed camera station.
+ * ONE fixed camera station, rendered as a full-viewport scene (Fork B layout).
  *
- * Two layers, exactly as the real design composites them:
- *  1. Transition layer — when the station has a transition clip, the play-through <video>
- *     (StationTransition) mounts here. The first station (street) has no transition, so it
- *     shows the empty, labeled placeholder box instead.
- *  2. DOM layer — live text/CTAs composited over the scene.
+ * Two composited layers, exactly as the real design stacks them:
+ *  1. Transition layer — when the station has a clip, the play-through <video>
+ *     (StationTransition) mounts here. The first station (street) has none, so it shows the
+ *     empty, labeled placeholder box instead.
+ *  2. DOM layer — live text/CTAs over the scene, including the directional `exits` that
+ *     drive click-to-navigate.
  *
- * Renders a full-viewport <section id={station.id}> so the walk-through is navigable by
- * native scroll and by Lenis `scrollTo("#id")`.
+ * Layout: every mounted frame is `absolute inset-0`, so the active scene and its (hidden)
+ * neighbors stack on the SAME spot — switching active swaps the visible scene IN PLACE with
+ * zero viewport motion. Only the active scene is visible and interactive; neighbors are kept
+ * in the DOM (so their video preloads / the decoder window holds) but made `inert` +
+ * transparent so they take no clicks, focus, or screen-reader attention.
  */
 export function StationFrame({
   station,
   index,
   total,
   activeIndex,
+  goToId,
 }: {
   station: Station;
   index: number;
   total: number;
   activeIndex: number;
+  goToId: (to: StationId) => void;
 }) {
   const hasTransition = Boolean(station.transitionIn?.h264Src);
+  const isActive = index === activeIndex;
+  const { markUnlocked } = usePlaybackUnlock();
 
   return (
     <section
       id={station.id}
       data-station={station.id}
-      className="relative flex min-h-screen w-full items-center justify-center overflow-hidden border-b border-white/5 px-6"
+      inert={!isActive}
+      className={`absolute inset-0 flex items-center justify-center overflow-hidden px-6 ${
+        isActive ? "z-10 opacity-100" : "z-0 opacity-0"
+      }`}
     >
       {/* 1. TRANSITION LAYER */}
       {hasTransition && station.transitionIn ? (
@@ -84,6 +98,27 @@ export function StationFrame({
           >
             {station.dom.cta.label}
           </Link>
+        )}
+
+        {/* Directional exits — click-to-navigate. The click is the user gesture that grants
+            iOS media autoplay, so we markUnlocked() synchronously IN the handler (before the
+            re-render mounts the next clip) to capture that transient activation, then swap. */}
+        {station.exits && station.exits.length > 0 && (
+          <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+            {station.exits.map((exit) => (
+              <button
+                key={exit.to}
+                type="button"
+                onClick={() => {
+                  markUnlocked();
+                  goToId(exit.to);
+                }}
+                className="rounded-full border border-white/30 bg-black/30 px-5 py-2 text-sm text-white transition-colors hover:bg-white/10"
+              >
+                {exit.label}
+              </button>
+            ))}
+          </div>
         )}
       </div>
     </section>
