@@ -172,14 +172,16 @@ export const STATIONS: readonly Station[] = [
       heading: "The Counter",
       body: "Ask the clerk anything. (Voice lines are placeholders for now.)",
     },
-    // Reachable hub (street → door → counter). BOTH side walls are now real: turn LEFT to
-    // Mixes (left-bins) and RIGHT to Crate (right-bins), each with a pre-encoded reversed
-    // return (see REVERSE_EDGES). Only the ahead/Vibes wall (mixtape-shelf) stays a synthetic
-    // placeholder and OFF. Reachable graph: street ↔ door ↔ counter ↔ Mixes, and counter ↔ Crate.
+    // Reachable hub (street → door → counter). ALL THREE walls are now real, each with a
+    // pre-encoded reversed return (see REVERSE_EDGES): turn LEFT to Mixes (left-bins), RIGHT to
+    // Crate (right-bins), and AHEAD to Vibes (mixtape-shelf). Reachable graph: street ↔ door ↔
+    // counter, and counter ↔ Mixes, counter ↔ Crate, counter ↔ Vibes. No synthetic placeholder
+    // reachable anywhere — the store is fully filmed.
     exits: [
       { label: "← Back to the door", to: "door", direction: "back" },
       { label: "← To the mixes", to: "left-bins", direction: "left" },
       { label: "To the crates →", to: "right-bins", direction: "right" },
+      { label: "To the vibes ↑", to: "mixtape-shelf", direction: "forward" },
     ],
   },
   {
@@ -243,18 +245,27 @@ export const STATIONS: readonly Station[] = [
     slug: "mixtape-shelf",
     description: "Hand-made mixtapes on the back shelf. One of a kind.",
     transitionIn: {
-      av1Src: "/transitions/_placeholder/mixtape-shelf.av1.mp4",
-      h264Src: "/transitions/_placeholder/mixtape-shelf.h264.mp4",
-      poster: "/transitions/_placeholder/mixtape-shelf.poster.jpg",
-      durationSec: 3,
+      // Real encode (counter → Vibes wall, a forward PUSH-IN — the door/counter push recipe,
+      // no pivot/no 2× pass). Trimmed to 2.6s: the Veo source is clean to ~2.7s then dissolves
+      // into an invented wall, so only the clean head ships. This is the ahead/Vibes (j2
+      // record-display back) wall, reached by moving straight ahead from the counter hub. AV1
+      // av01.0.08M.08 + H.264 avc1.4D4028, matching the engine's <source> types (codec strings
+      // parsed from the av1C/avcC boxes). (id/DOM keep the scaffold "mixtape-shelf" identity —
+      // the id→Vibes rename is the deferred design thread.)
+      av1Src: "/transitions/vibes/vibes.av1.mp4",
+      h264Src: "/transitions/vibes/vibes.h264.mp4",
+      poster: "/transitions/vibes/vibes.poster.jpg",
+      durationSec: 2.6,
     },
     dom: {
       heading: "Mixtape Shelf",
       body: "Or just take it all home.",
       cta: { label: "Browse everything →", href: "/music" },
     },
-    // Last station — forward is the /music CTA above; only a back exit here.
-    exits: [{ label: "← Right bins", to: "right-bins", direction: "back" }],
+    // Return to the counter plays the pre-encoded reversed push-in (mixtape-shelf → counter in
+    // REVERSE_EDGES — a safe pull-back, no rain/directional particles). Only a back-to-counter
+    // exit: this is the AHEAD wall, the deepest reachable point — no onward wall beyond it.
+    exits: [{ label: "← Back to the counter", to: "counter", direction: "back" }],
   },
 ] as const;
 
@@ -320,6 +331,14 @@ const REVERSE_EDGES: Readonly<Record<string, TransitionAsset>> = {
     h264Src: "/transitions/crate-counter/crate-counter.h264.mp4",
     poster: "/transitions/crate-counter/crate-counter.poster.jpg",
     durationSec: 4,
+  },
+  // mixtape-shelf (Vibes) → counter: reversed counter→Vibes push-in (2.6s) — a safe pull-back
+  // (no rain/directional particles, unlike door→street). Turning back to the hub.
+  "mixtape-shelf->counter": {
+    av1Src: "/transitions/vibes-counter/vibes-counter.av1.mp4",
+    h264Src: "/transitions/vibes-counter/vibes-counter.h264.mp4",
+    poster: "/transitions/vibes-counter/vibes-counter.poster.jpg",
+    durationSec: 2.6,
   },
   // NB: door → street has NO reverse entry on purpose. A reversed street→door push-in runs the
   // rain UPWARD (unshippable), so door→street falls through to street.transitionIn (null) — a

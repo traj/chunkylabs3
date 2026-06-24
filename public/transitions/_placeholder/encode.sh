@@ -17,7 +17,11 @@ DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 LBL="${TMPDIR:-/tmp}/cl_labels"
 DUR=3
 FPS=30
-TRIM=4
+# Seconds kept from the head of a --real source. Default 4 (push-ins, and 2×'d pivots which
+# land at ~4s). Env-overridable for clips with a shorter clean window — e.g. the Vibes push-in
+# dissolves into an invented wall after ~2.8s, so it ships TRIM=2.6: `TRIM=2.6 bash encode.sh
+# --real <raw> vibes`. Keep this in lockstep with the station's durationSec.
+TRIM="${TRIM:-4}"
 
 # Real-asset mode: encode ONE real source clip (landscape) to the SAME spec the synthetic
 # clips use — AV1 (SVT-AV1, Profile 0 8-bit) + H.264 (Main@4.0) + first-frame poster, GOP
