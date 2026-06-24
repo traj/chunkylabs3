@@ -272,3 +272,64 @@ export function getPrevStation(id: StationId): Station | undefined {
   const i = getStationIndex(id);
   return i > 0 ? STATIONS[i - 1] : undefined;
 }
+
+/**
+ * Directed-edge transition assets — the RETURN (back) edges only.
+ *
+ * Transitions used to be keyed to the DESTINATION station (one inbound clip per station), so
+ * a return replayed the forward arrival clip — wrong for the two reachable back edges
+ * (counter→door replayed street→door; left-bins/Mixes→counter replayed door→counter). They
+ * are now keyed to the directed EDGE (`from`→`to`): a return plays a PRE-ENCODED reversed
+ * clip — the forward master, time-reversed IN THE FILE — which the engine still plays plain
+ * FORWARD (play-once-hold intact; no negative `playbackRate`, iOS-unsafe). "Reverse" lives
+ * only in the asset bytes.
+ *
+ * Reverse poster = first frame of the reversed file (= forward clip's LAST frame = the room
+ * you leave from on the return), so the pre-play/blocked still shows where you ARE, not the
+ * opposite room. Assets produced deterministically by `encode.sh --reverse` (local ffmpeg),
+ * same codec spec as the forwards (av01.0.08M.08 / avc1.4D4028).
+ */
+const REVERSE_EDGES: Readonly<Record<string, TransitionAsset>> = {
+  // counter → door: reversed door→counter push-in. 8s (inherits the forward length); may be
+  // 2×'d later if the back-out drags — not this pass.
+  "counter->door": {
+    av1Src: "/transitions/counter-door/counter-door.av1.mp4",
+    h264Src: "/transitions/counter-door/counter-door.h264.mp4",
+    poster: "/transitions/counter-door/counter-door.poster.jpg",
+    durationSec: 8,
+  },
+  // left-bins (Mixes) → counter: reversed counter→Mixes pivot (~4s) — turning back to the hub.
+  "left-bins->counter": {
+    av1Src: "/transitions/mixes-counter/mixes-counter.av1.mp4",
+    h264Src: "/transitions/mixes-counter/mixes-counter.h264.mp4",
+    poster: "/transitions/mixes-counter/mixes-counter.poster.jpg",
+    durationSec: 4,
+  },
+  // door → street: reversed street→door push-in (~4s) — backing out to the storefront.
+  "door->street": {
+    av1Src: "/transitions/door-street/door-street.av1.mp4",
+    h264Src: "/transitions/door-street/door-street.h264.mp4",
+    poster: "/transitions/door-street/door-street.poster.jpg",
+    durationSec: 4,
+  },
+};
+
+/**
+ * Resolve the transition clip for a directed move `from`→`to`.
+ *  - An explicit RETURN edge → its pre-encoded reversed clip (the only behaviour change).
+ *  - Everything else — forward edges, the no-edge initial mount, unreachable synthetic edges
+ *    — falls through to the destination station's `transitionIn`, so forward arrivals and the
+ *    starting street state stay byte-for-byte unchanged.
+ * `from` is `null` on the initial mount: you start at the first station, nothing played you in.
+ */
+export function resolveTransition(
+  from: StationId | null,
+  to: StationId,
+): TransitionAsset | null {
+  if (from) {
+    const reverse = REVERSE_EDGES[`${from}->${to}`];
+    if (reverse) return reverse;
+  }
+  const dest = STATIONS[getStationIndex(to)];
+  return dest ? dest.transitionIn : null;
+}

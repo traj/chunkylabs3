@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useLenis } from "lenis/react";
-import { STATIONS, type StationId } from "@/data/stations";
+import { STATIONS, resolveTransition, type StationId } from "@/data/stations";
 import { StationFrame } from "@/components/stations/StationFrame";
 import { PlaybackUnlockProvider } from "@/components/stations/PlaybackUnlock";
 
@@ -28,6 +28,10 @@ const KEEP_WINDOW = 1;
 export function StoreWalkthrough() {
   const lenis = useLenis();
   const [active, setActive] = useState(0);
+  // The station we last came FROM — the source of the directed edge just traversed. Together
+  // with the active station it names the edge, which is what resolves the clip to play (a
+  // return plays its pre-encoded reversed asset). `null` on first mount: nothing played us in.
+  const [cameFrom, setCameFrom] = useState<StationId | null>(null);
   const total = STATIONS.length;
 
   // /store is true zero-scroll. Lenis is a GLOBAL root provider (it must keep working on
@@ -46,7 +50,11 @@ export function StoreWalkthrough() {
 
   function goToId(to: StationId) {
     const idx = STATIONS.findIndex((s) => s.id === to);
-    if (idx !== -1) setActive(idx);
+    if (idx === -1 || idx === active) return;
+    // Record the traversed edge before moving: `from` is the current active station (already
+    // in scope — previously discarded). The new active's clip is resolved from (from → to).
+    setCameFrom(STATIONS[active].id);
+    setActive(idx);
   }
 
   return (
@@ -54,18 +62,26 @@ export function StoreWalkthrough() {
       {/* Fixed, full-viewport stage. Scenes are absolutely positioned inside and swap in
           place; the stage itself never moves and the page has nothing to scroll. */}
       <main className="fixed inset-0 overflow-hidden bg-black">
-        {STATIONS.map((station, i) =>
-          Math.abs(i - active) <= KEEP_WINDOW ? (
+        {STATIONS.map((station, i) => {
+          if (Math.abs(i - active) > KEEP_WINDOW) return null;
+          // Edge-keyed clip resolution. The ACTIVE station plays the edge we just traversed
+          // into it (cameFrom → active). A NEIGHBOUR preloads the edge we'd traverse to reach
+          // it (active → neighbour). Both name the SAME edge for the station mid-transition, so
+          // its <source>s never remount as it becomes active — the clip just starts playing.
+          const fromId = i === active ? cameFrom : STATIONS[active].id;
+          const asset = resolveTransition(fromId, station.id);
+          return (
             <StationFrame
               key={station.id}
               station={station}
+              asset={asset}
               index={i}
               total={total}
               activeIndex={active}
               goToId={goToId}
             />
-          ) : null,
-        )}
+          );
+        })}
       </main>
     </PlaybackUnlockProvider>
   );

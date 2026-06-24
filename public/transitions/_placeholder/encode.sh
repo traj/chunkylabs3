@@ -51,9 +51,51 @@ encode_real() {
     -i "$out/$dest.h264.mp4" -frames:v 1 -q:v 3 "$out/$dest.poster.jpg"
 }
 
+# Reverse-edge mode: encode the time-REVERSED whole of a forward master to the SAME spec,
+# so a "return" edge (to→from) plays a real backing-out clip FORWARD (the reverse lives in
+# the file, never in playback — no negative playbackRate; play-once-hold stays intact). No
+# trim: the `reverse` filter buffers the entire clip, so the output inherits the source
+# duration (counter→door return = 8s; mixes→counter, door→street returns = 4s). The poster is
+# the first frame of the REVERSED file (= forward clip's LAST frame = the room you leave from
+# on the return) — the correct landing poster for a back edge.
+#   Usage: bash encode.sh --reverse <forward-master.mp4> <from-to> [outdir]
+encode_reverse() {
+  local input="$1"
+  local dest="$2"
+  local out="$3"
+  mkdir -p "$out"
+
+  # AV1 — SVT-AV1, Profile 0 (yuv420p = 8-bit 4:2:0). Same codec approach as encode_real().
+  ffmpeg -y -hide_banner -loglevel error \
+    -i "$input" \
+    -vf "reverse,format=yuv420p" -map 0:v:0 -an \
+    -c:v libsvtav1 -preset 6 -crf 38 -g 60 \
+    -movflags +faststart \
+    "$out/$dest.av1.mp4"
+
+  # H.264 — libx264 Main@4.0 (mandatory floor). Same codec approach as encode_real().
+  ffmpeg -y -hide_banner -loglevel error \
+    -i "$input" \
+    -vf "reverse,format=yuv420p" -map 0:v:0 -an \
+    -c:v libx264 -profile:v main -level:v 4.0 -preset medium -crf 23 -g 60 \
+    -movflags +faststart \
+    "$out/$dest.h264.mp4"
+
+  # Poster — first frame of the REVERSED clip (NOT the forward poster).
+  ffmpeg -y -hide_banner -loglevel error \
+    -i "$out/$dest.h264.mp4" -frames:v 1 -q:v 3 "$out/$dest.poster.jpg"
+}
+
 if [[ "${1:-}" == "--real" ]]; then
   echo "encoding REAL '$3' from $2 (first ${TRIM}s) ..."
   encode_real "$2" "$3" "${4:-$DIR/../$3}"
+  echo "done."
+  exit 0
+fi
+
+if [[ "${1:-}" == "--reverse" ]]; then
+  echo "encoding REVERSE '$3' from $2 (full clip, time-reversed) ..."
+  encode_reverse "$2" "$3" "${4:-$DIR/../$3}"
   echo "done."
   exit 0
 fi

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import type { Station, StationId } from "@/data/stations";
+import type { Station, StationId, TransitionAsset } from "@/data/stations";
 import { StationTransition } from "./StationTransition";
 import { usePlaybackUnlock } from "./PlaybackUnlock";
 
@@ -23,18 +23,25 @@ import { usePlaybackUnlock } from "./PlaybackUnlock";
  */
 export function StationFrame({
   station,
+  asset,
   index,
   total,
   activeIndex,
   goToId,
 }: {
   station: Station;
+  /**
+   * The transition clip to play, resolved by the controller from the directed EDGE that leads
+   * to this scene (forward arrival or a pre-encoded reverse), not from `station.transitionIn`.
+   * `null` when the edge has no clip (e.g. the initial street mount) → the empty placeholder.
+   */
+  asset: TransitionAsset | null;
   index: number;
   total: number;
   activeIndex: number;
   goToId: (to: StationId) => void;
 }) {
-  const hasTransition = Boolean(station.transitionIn?.h264Src);
+  const hasTransition = Boolean(asset?.h264Src);
   const isActive = index === activeIndex;
   const { markUnlocked } = usePlaybackUnlock();
 
@@ -48,9 +55,9 @@ export function StationFrame({
       }`}
     >
       {/* 1. TRANSITION LAYER */}
-      {hasTransition && station.transitionIn ? (
+      {hasTransition && asset ? (
         <StationTransition
-          asset={station.transitionIn}
+          asset={asset}
           index={index}
           activeIndex={activeIndex}
         />
