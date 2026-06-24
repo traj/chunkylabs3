@@ -172,12 +172,14 @@ export const STATIONS: readonly Station[] = [
       heading: "The Counter",
       body: "Ask the clerk anything. (Voice lines are placeholders for now.)",
     },
-    // Reachable hub (street → door → counter). The Mixes/left wall is now real, so counter↔Mixes
-    // goes live — turn left. The other walls (right/Crate, ahead/Vibes) are still synthetic
-    // placeholders, so they stay OFF: the reachable graph is street ↔ door ↔ counter ↔ Mixes.
+    // Reachable hub (street → door → counter). BOTH side walls are now real: turn LEFT to
+    // Mixes (left-bins) and RIGHT to Crate (right-bins), each with a pre-encoded reversed
+    // return (see REVERSE_EDGES). Only the ahead/Vibes wall (mixtape-shelf) stays a synthetic
+    // placeholder and OFF. Reachable graph: street ↔ door ↔ counter ↔ Mixes, and counter ↔ Crate.
     exits: [
       { label: "← Back to the door", to: "door", direction: "back" },
       { label: "← To the mixes", to: "left-bins", direction: "left" },
+      { label: "To the crates →", to: "right-bins", direction: "right" },
     ],
   },
   {
@@ -213,19 +215,26 @@ export const STATIONS: readonly Station[] = [
     slug: "right-bins",
     description: "More crates down the right wall.",
     transitionIn: {
-      av1Src: "/transitions/_placeholder/right-bins.av1.mp4",
-      h264Src: "/transitions/_placeholder/right-bins.h264.mp4",
-      poster: "/transitions/_placeholder/right-bins.poster.jpg",
-      durationSec: 3,
+      // Real encode (counter → Crate wall, a RIGHT pivot, ~4s — 2×'d from the original 8s
+      // Cinema Studio pivot, the locked pivot recipe used for Mixes). The right/Crate dig-bin
+      // wall, reached by turning right from the counter hub. AV1 av01.0.08M.08 + H.264
+      // avc1.4D4028, matching the engine's <source> types (codec strings parsed from the
+      // av1C/avcC boxes). NOTE: poster is the first frame (the counter) — the known, deferred
+      // poster=first-frame item, intentionally NOT fixed here.
+      av1Src: "/transitions/crate/crate.av1.mp4",
+      h264Src: "/transitions/crate/crate.h264.mp4",
+      poster: "/transitions/crate/crate.poster.jpg",
+      durationSec: 4,
     },
     dom: {
       heading: "Right Bins",
       body: "Keep digging.",
     },
-    exits: [
-      { label: "← Left bins", to: "left-bins", direction: "back" },
-      { label: "Mixtape shelf →", to: "mixtape-shelf", direction: "forward" },
-    ],
+    // Return to the counter plays the pre-encoded reversed pivot (right-bins → counter in
+    // REVERSE_EDGES — turning back). Crate gets ONLY a back-to-counter exit: the onward
+    // ahead/Vibes wall (mixtape-shelf) is still a synthetic "DO NOT SHIP" placeholder, so it
+    // stays unreachable (same discipline as the door→counter coupling, 789ef95).
+    exits: [{ label: "← Back to the counter", to: "counter", direction: "back" }],
   },
   {
     id: "mixtape-shelf",
@@ -303,6 +312,13 @@ const REVERSE_EDGES: Readonly<Record<string, TransitionAsset>> = {
     av1Src: "/transitions/mixes-counter/mixes-counter.av1.mp4",
     h264Src: "/transitions/mixes-counter/mixes-counter.h264.mp4",
     poster: "/transitions/mixes-counter/mixes-counter.poster.jpg",
+    durationSec: 4,
+  },
+  // right-bins (Crate) → counter: reversed counter→Crate pivot (~4s) — turning back to the hub.
+  "right-bins->counter": {
+    av1Src: "/transitions/crate-counter/crate-counter.av1.mp4",
+    h264Src: "/transitions/crate-counter/crate-counter.h264.mp4",
+    poster: "/transitions/crate-counter/crate-counter.poster.jpg",
     durationSec: 4,
   },
   // door → street: reversed street→door push-in (~4s) — backing out to the storefront.
