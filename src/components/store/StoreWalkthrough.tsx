@@ -48,6 +48,24 @@ export function StoreWalkthrough() {
     };
   }, [lenis]);
 
+  // De-flash cold-mounted exit targets (e.g. Crate, two indices from the counter hub, is
+  // outside the active±1 mount window — so it cold-mounts on click and would paint BLACK until
+  // its poster downloads). Warm only the POSTERS of the active station's reachable exits into
+  // the image cache (off-DOM Image() — no <video>, so the mounted-element count and the iOS
+  // decode budget are untouched, unlike widening the window). The cold mount then paints its
+  // poster immediately — a poster hold instead of a black flash. Index-adjacent targets (Mixes)
+  // are already warm via the decoder window; re-priming their poster is a harmless cache hit.
+  useEffect(() => {
+    const activeStation = STATIONS[active];
+    const posters = (activeStation.exits ?? [])
+      .map((exit) => resolveTransition(activeStation.id, exit.to)?.poster)
+      .filter((p): p is string => Boolean(p));
+    for (const src of posters) {
+      const img = new Image();
+      img.src = src;
+    }
+  }, [active]);
+
   function goToId(to: StationId) {
     const idx = STATIONS.findIndex((s) => s.id === to);
     if (idx === -1 || idx === active) return;

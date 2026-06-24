@@ -47,13 +47,23 @@ export function StationTransition({
   activeIndex: number;
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
-  const hasLoadedRef = useRef(false);
+  // The clip URL currently LOADED into the media element (null when sources are dropped).
+  // Replaces a plain "has loaded" boolean: edge-keying means a windowed station can be handed
+  // a DIFFERENT clip in place (e.g. the counter switching from crate-counter to mixes-counter),
+  // and mutating a <source> `src` without calling load() is a no-op — the element would replay
+  // its stale clip. Reloading only when this identity changes fixes that while leaving an
+  // unchanged src warm (no reload-thrash, preserves the neighbour→active smooth handoff).
+  const loadedSrcRef = useRef<string | null>(null);
   const [needsTap, setNeedsTap] = useState(false);
   const [forceTap, setForceTap] = useState(false);
   const { unlocked, markUnlocked } = usePlaybackUnlock();
 
   const keepSrc = Math.abs(index - activeIndex) <= KEEP_WINDOW;
   const isActive = index === activeIndex;
+  // Identity of the clip the <source>s point at (H.264 is the mandatory floor, always present;
+  // av1 fallback for completeness). Both encodings change together per asset, so this is a
+  // stable per-clip key for the reload-on-change check below.
+  const desiredSrc = asset.h264Src ?? asset.av1Src ?? null;
 
   // Debug aid: ?forceTapToPlay=1 simulates a rejected autoplay so the overlay is testable
   // without having to coax the browser into blocking autoplay. Client-only (no SSR mismatch).
@@ -96,15 +106,18 @@ export function StationTransition({
       v.pause();
       v.removeAttribute("src");
       v.load();
-      hasLoadedRef.current = false;
+      loadedSrcRef.current = null;
       setNeedsTap(false);
       return;
     }
 
-    // (Re)load when sources were previously dropped and have just re-mounted.
-    if (!hasLoadedRef.current) {
+    // (Re)load when the sources were dropped and re-mounted, OR the active asset changed in
+    // place (edge-keying hands a windowed element a different clip — changing <source> src
+    // without load() would replay the stale clip). An UNCHANGED src must NOT reload, so the
+    // neighbour that already preloaded this clip stays warm and the handoff is seamless.
+    if (loadedSrcRef.current !== desiredSrc) {
       v.load();
-      hasLoadedRef.current = true;
+      loadedSrcRef.current = desiredSrc;
     }
 
     if (isActive) {
@@ -121,7 +134,7 @@ export function StationTransition({
     } else {
       v.pause();
     }
-  }, [keepSrc, isActive, forceTap, tryPlay]);
+  }, [keepSrc, isActive, forceTap, tryPlay, desiredSrc]);
 
   // Reuse the first successful gesture: once the session is unlocked, retry a blocked clip.
   useEffect(() => {

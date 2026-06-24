@@ -321,13 +321,10 @@ const REVERSE_EDGES: Readonly<Record<string, TransitionAsset>> = {
     poster: "/transitions/crate-counter/crate-counter.poster.jpg",
     durationSec: 4,
   },
-  // door → street: reversed street→door push-in (~4s) — backing out to the storefront.
-  "door->street": {
-    av1Src: "/transitions/door-street/door-street.av1.mp4",
-    h264Src: "/transitions/door-street/door-street.h264.mp4",
-    poster: "/transitions/door-street/door-street.poster.jpg",
-    durationSec: 4,
-  },
+  // NB: door → street has NO reverse entry on purpose. A reversed street→door push-in runs the
+  // rain UPWARD (unshippable), so door→street falls through to street.transitionIn (null) — a
+  // clean no-video snap back to the storefront. A real moving return would be a forward-filmed
+  // clip, not a reversed one (a separate task).
 };
 
 /**
