@@ -11,8 +11,8 @@ fills its slots with real footage instead of the synthetic "DO NOT SHIP" placeho
 > clips are now real and live — **street→door**, **door→counter** (both push-ins), and
 > **counter→Mixes** (the first pivot) — proving the pipeline end-to-end. The
 > **counter→wall pivot recipe is LOCKED** (Cinema Studio start+end frames) and the
-> **speed pass** (now **4× → ~2s** for the counter↔wall quarter-turns) is the encode
-> standard for pivots; both are written into Stages 1–2.
+> **speed pass** (now **8× → 1.0s** — every transition, quarters AND the chained express,
+> lands at 1.0s) is the encode standard for pivots; both are written into Stages 1–2.
 > Full history: `docs/2026-06-23-session-pt2-mixes-wall-cinema-studio-pivot.md`.
 
 References fleet capabilities documented in `agent_machine/docs/{media-pipeline-
@@ -52,7 +52,7 @@ inbound-less start (The Street mounts no video):
 |---|---|---|---|---|
 | 1 | street → door | push-in | Forward push toward the storefront, neon, rain on glass | **real (49a43fb)** |
 | 2 | door → counter | push-in | Through the door, swing toward the clerk counter (kept full 8s — background car is part of the beat) | **real (789ef95)** |
-| 3 | counter → **Mixes** (left) | **pivot** | Turn LEFT to the mixes/tapes wall (absorbed the old mixtape-shelf identity) | **real (91b7a1a), 4×→~2s** |
+| 3 | counter → **Mixes** (left) | **pivot** | Turn LEFT to the mixes/tapes wall (absorbed the old mixtape-shelf identity) | **real (91b7a1a), 8×→1.0s** |
 | 4 | counter → **Crate** (right) | **pivot** | Turn RIGHT to the crate-dig wall — invent a *distinct* right-side wedge | pending |
 | 5 | counter → **Vibes** (ahead) | push-in | Move AHEAD into the Vibes space — easiest (least invention) | pending |
 
@@ -139,15 +139,21 @@ otherwise keeps the exact spec it already encodes to.
 - **SPEED PASS for pivots (LOCKED standard).** Raw Cinema Studio pivots run ~8s, which
   feels slow in a click-hub. Speed them up with a **single `setpts` from the RAW** plus
   `fps=24` — *not* stacked on an already-sped file (stacking re-samples already-dropped
-  frames and risks judder). The counter↔wall **quarter-turns (Mixes, Crate) are 4× → ~2s**
-  (`setpts=PTS/4.0,fps=24`; verified **48/48 distinct frames, no judder**, 2026-06-25). The
-  earlier 2× (`setpts=PTS/2.0` → ~4s) was a first cut, halved again for snappier click-nav;
-  the "deeper shop" character survives. Codec strings stay file-accurate (`av01.0.08M.08` /
+  frames and risks judder). **EVERY transition now lands at 1.0s** ("same time regardless of
+  distance"): the counter↔wall **quarter-turns are 8×** (`setpts=PTS/8.0,fps=24` → 24f/1.0s;
+  verified **24/24 distinct frames, no judder**, 2026-06-25). This superseded the earlier 2×
+  (~4s) then 4× (~2s) passes — halved again for a snappier click-hub; the "deeper shop"
+  character survives even at 24 frames. Codec strings stay file-accurate (`av01.0.08M.08` /
   `avc1.4D4028`). **Derive the matching REVERSE from the NEW forward** via `encode.sh
   --reverse` — never speed forward/reverse independently; they must stay exact mirrors at the
-  new duration. **Note:** an in-place re-encode overwrites the *tracked* binaries, so the
-  `durationSec` change MUST commit the new binaries alongside or the repo pairs new metadata
-  with old assets (learned on the Mixes 2× pass, 49b0c11; re-confirmed on the 4× pass).
+  new duration. **The chained EXPRESS (counter↔Vibes) also lands at 1.0s**, built from the
+  RAWS in one pass (per-raw `setpts` + `xfade`, NOT by re-speeding the 2.0s express — that
+  would crush the dissolve into the visible PSNR~14 seam): each quarter compressed to ~15f,
+  joined by a ~6-frame `xfade` dissolve, → 24f/1.0s; the dissolve must still read as a BLEND
+  on a frame-sweep (longer-than-proportional is fine — hiding the seam beats exact symmetry).
+  **Note:** an in-place re-encode overwrites the *tracked* binaries, so the `durationSec`
+  change MUST commit the new binaries alongside or the repo pairs new metadata with old assets
+  (learned on the Mixes 2× pass, 49b0c11; re-confirmed on the 4× and 8× passes).
 
 **This stage is pure deterministic — a script, no agent.** Per the fleet plan's
 core argument, routing `ffmpeg encode → parse boxes → write files` through an LLM

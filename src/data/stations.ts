@@ -204,14 +204,14 @@ export const STATIONS: readonly Station[] = [
     slug: "left-bins",
     description: "The left wall. Mixes and live sets, end to end.",
     transitionIn: {
-      // Real encode (counter → Mixes wall, a left pan/turn, ~2s — re-encoded at 4× from the
+      // Real encode (counter → Mixes wall, a left pan/turn, ~1s — re-encoded at 8× from the
       // original 8s raw, a snappy quarter-turn for the click-hub). This is the left/Mixes wall — SoundCloud mixes / live sets — reached by
       // turning left from the counter hub. AV1 av01.0.08M.08 + H.264 avc1.4D4028, matching the
       // engine's <source> types (codec strings parsed from the av1C/avcC boxes).
       av1Src: "/transitions/mixes/mixes.av1.mp4",
       h264Src: "/transitions/mixes/mixes.h264.mp4",
       poster: "/transitions/mixes/mixes.poster.jpg",
-      durationSec: 2,
+      durationSec: 1,
     },
     dom: {
       heading: "Mixes",
@@ -236,7 +236,7 @@ export const STATIONS: readonly Station[] = [
     slug: "right-bins",
     description: "The right wall. A crate of everything.",
     transitionIn: {
-      // Real encode (counter → Crate wall, a RIGHT pivot, ~2s — 4×'d from the original 8s
+      // Real encode (counter → Crate wall, a RIGHT pivot, ~1s — 8×'d from the original 8s
       // Cinema Studio raw, a snappy quarter-turn matching Mixes). The right/Crate dig-bin
       // wall, reached by turning right from the counter hub. AV1 av01.0.08M.08 + H.264
       // avc1.4D4028, matching the engine's <source> types (codec strings parsed from the
@@ -247,7 +247,7 @@ export const STATIONS: readonly Station[] = [
       av1Src: "/transitions/crate/crate.av1.mp4",
       h264Src: "/transitions/crate/crate.h264.mp4",
       poster: "/transitions/crate/crate.poster.jpg",
-      durationSec: 2,
+      durationSec: 1,
     },
     dom: {
       heading: "Crate",
@@ -352,19 +352,19 @@ const REVERSE_EDGES: Readonly<Record<string, TransitionAsset>> = {
     poster: "/transitions/counter-door/counter-door.poster.jpg",
     durationSec: 8,
   },
-  // left-bins (Mixes) → counter: reversed counter→Mixes pivot (~2s) — turning back to the hub.
+  // left-bins (Mixes) → counter: reversed counter→Mixes pivot (~1s) — turning back to the hub.
   "left-bins->counter": {
     av1Src: "/transitions/mixes-counter/mixes-counter.av1.mp4",
     h264Src: "/transitions/mixes-counter/mixes-counter.h264.mp4",
     poster: "/transitions/mixes-counter/mixes-counter.poster.jpg",
-    durationSec: 2,
+    durationSec: 1,
   },
-  // right-bins (Crate) → counter: reversed counter→Crate pivot (~2s) — turning back to the hub.
+  // right-bins (Crate) → counter: reversed counter→Crate pivot (~1s) — turning back to the hub.
   "right-bins->counter": {
     av1Src: "/transitions/crate-counter/crate-counter.av1.mp4",
     h264Src: "/transitions/crate-counter/crate-counter.h264.mp4",
     poster: "/transitions/crate-counter/crate-counter.poster.jpg",
-    durationSec: 2,
+    durationSec: 1,
   },
   // mixtape-shelf (Vibes) → counter: RETIRED from the active path. It used to play the reversed
   // counter→Vibes push-in (vibes-counter, 2.6s, straight across the room); the counter↔Vibes trip
@@ -374,19 +374,19 @@ const REVERSE_EDGES: Readonly<Record<string, TransitionAsset>> = {
   // Ring returns (Vibes ↔ side walls): reversed wall→Vibes pivots, turning back along the ring.
   // The FORWARD ring edges (Mixes→Vibes, Crate→Vibes) live in FORWARD_EDGES, not here — Vibes
   // now has multiple inbound forward arrivals, so they can't use the transitionIn fall-through.
-  // mixtape-shelf (Vibes) → left-bins (Mixes): reversed Mixes→Vibes pivot (~2s) — turning back to Mixes.
+  // mixtape-shelf (Vibes) → left-bins (Mixes): reversed Mixes→Vibes pivot (~1s) — turning back to Mixes.
   "mixtape-shelf->left-bins": {
     av1Src: "/transitions/vibes-mixes/vibes-mixes.av1.mp4",
     h264Src: "/transitions/vibes-mixes/vibes-mixes.h264.mp4",
     poster: "/transitions/vibes-mixes/vibes-mixes.poster.jpg",
-    durationSec: 2,
+    durationSec: 1,
   },
-  // mixtape-shelf (Vibes) → right-bins (Crate): reversed Crate→Vibes pivot (~2s) — turning back to Crate.
+  // mixtape-shelf (Vibes) → right-bins (Crate): reversed Crate→Vibes pivot (~1s) — turning back to Crate.
   "mixtape-shelf->right-bins": {
     av1Src: "/transitions/vibes-crate/vibes-crate.av1.mp4",
     h264Src: "/transitions/vibes-crate/vibes-crate.h264.mp4",
     poster: "/transitions/vibes-crate/vibes-crate.poster.jpg",
-    durationSec: 2,
+    durationSec: 1,
   },
   // NB: door → street has NO reverse entry on purpose. A reversed street→door push-in runs the
   // rain UPWARD (unshippable), so door→street falls through to street.transitionIn (null) — a
@@ -403,19 +403,19 @@ const REVERSE_EDGES: Readonly<Record<string, TransitionAsset>> = {
  * (no entry here). These are forward-filmed clips (not reversed); same codec spec as the rest.
  */
 const FORWARD_EDGES: Readonly<Record<string, TransitionAsset>> = {
-  // left-bins (Mixes) → mixtape-shelf (Vibes): the new Mixes→Vibes pivot (~2s, LEFT turn).
+  // left-bins (Mixes) → mixtape-shelf (Vibes): the new Mixes→Vibes pivot (~1s, LEFT turn).
   "left-bins->mixtape-shelf": {
     av1Src: "/transitions/mixes-vibes/mixes-vibes.av1.mp4",
     h264Src: "/transitions/mixes-vibes/mixes-vibes.h264.mp4",
     poster: "/transitions/mixes-vibes/mixes-vibes.poster.jpg",
-    durationSec: 2,
+    durationSec: 1,
   },
-  // right-bins (Crate) → mixtape-shelf (Vibes): the new Crate→Vibes pivot (~2s, RIGHT turn).
+  // right-bins (Crate) → mixtape-shelf (Vibes): the new Crate→Vibes pivot (~1s, RIGHT turn).
   "right-bins->mixtape-shelf": {
     av1Src: "/transitions/crate-vibes/crate-vibes.av1.mp4",
     h264Src: "/transitions/crate-vibes/crate-vibes.h264.mp4",
     poster: "/transitions/crate-vibes/crate-vibes.poster.jpg",
-    durationSec: 2,
+    durationSec: 1,
   },
 };
 
@@ -424,10 +424,10 @@ const FORWARD_EDGES: Readonly<Record<string, TransitionAsset>> = {
  * the camera CIRCLES the room: two existing quarter clips are pre-concatenated (with a ~6-frame
  * crossfade masking the geometric seam — the held end frame of clip 1 and the start frame of
  * clip 2 are the same wall but NOT pixel-aligned, PSNR ~14–18, so a hard cut would jump) and
- * compressed to ~2.0s, so every trip takes the same time regardless of distance. Each direction
+ * compressed to ~1.0s, so every trip takes the same time regardless of distance. Each direction
  * has TWO side-routes (via Mixes / via Crate); the controller (StoreWalkthrough) rolls one 50/50
  * PER TRIP — out via one side may return via the other ("circle the room"). To the engine these
- * are ordinary SINGLE 2.0s clips (no runtime chaining / playbackRate). The two side-routes of a
+ * are ordinary SINGLE 1.0s clips (no runtime chaining / playbackRate). The two side-routes of a
  * direction share ONE poster — their first frame is the same wall (counter outbound, Vibes
  * return) — so the cold-mount poster-warm stays a cache hit whichever side is rolled.
  * `resolveTransition` returns side[0] as the representative (what poster-warm reads + a safe
@@ -441,13 +441,13 @@ export const EXPRESS_EDGES: Readonly<
 > = {
   // counter → Vibes:  counter→Mixes ⌢ Mixes→Vibes   |   counter→Crate ⌢ Crate→Vibes
   "counter->mixtape-shelf": [
-    { av1Src: "/transitions/cv-mixes/cv-mixes.av1.mp4", h264Src: "/transitions/cv-mixes/cv-mixes.h264.mp4", poster: CV_POSTER, durationSec: 2 },
-    { av1Src: "/transitions/cv-crate/cv-crate.av1.mp4", h264Src: "/transitions/cv-crate/cv-crate.h264.mp4", poster: CV_POSTER, durationSec: 2 },
+    { av1Src: "/transitions/cv-mixes/cv-mixes.av1.mp4", h264Src: "/transitions/cv-mixes/cv-mixes.h264.mp4", poster: CV_POSTER, durationSec: 1 },
+    { av1Src: "/transitions/cv-crate/cv-crate.av1.mp4", h264Src: "/transitions/cv-crate/cv-crate.h264.mp4", poster: CV_POSTER, durationSec: 1 },
   ],
   // Vibes → counter:  Vibes→Mixes ⌢ Mixes→counter   |   Vibes→Crate ⌢ Crate→counter
   "mixtape-shelf->counter": [
-    { av1Src: "/transitions/vc-mixes/vc-mixes.av1.mp4", h264Src: "/transitions/vc-mixes/vc-mixes.h264.mp4", poster: VC_POSTER, durationSec: 2 },
-    { av1Src: "/transitions/vc-crate/vc-crate.av1.mp4", h264Src: "/transitions/vc-crate/vc-crate.h264.mp4", poster: VC_POSTER, durationSec: 2 },
+    { av1Src: "/transitions/vc-mixes/vc-mixes.av1.mp4", h264Src: "/transitions/vc-mixes/vc-mixes.h264.mp4", poster: VC_POSTER, durationSec: 1 },
+    { av1Src: "/transitions/vc-crate/vc-crate.av1.mp4", h264Src: "/transitions/vc-crate/vc-crate.h264.mp4", poster: VC_POSTER, durationSec: 1 },
   ],
 };
 
