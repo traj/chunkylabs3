@@ -188,8 +188,8 @@ export const STATIONS: readonly Station[] = [
     // Reachable hub (street → door → counter). ALL THREE walls are now real, each with a
     // pre-encoded reversed return (see REVERSE_EDGES): turn LEFT to Mixes (left-bins), RIGHT to
     // Crate (right-bins), and AHEAD to Vibes (mixtape-shelf). Reachable graph: street ↔ door ↔
-    // counter, and counter ↔ Mixes, counter ↔ Crate, counter ↔ Vibes. No synthetic placeholder
-    // reachable anywhere — the store is fully filmed.
+    // counter, counter ↔ Mixes/Crate/Vibes, AND the ring Mixes ↔ Vibes ↔ Crate (wall-to-wall) —
+    // full rotational nav. No synthetic placeholder reachable anywhere — the store is fully filmed.
     exits: [
       { label: "← Back to the door", to: "door", direction: "back" },
       { label: "← Mixes", to: "left-bins", direction: "left" },
@@ -217,11 +217,12 @@ export const STATIONS: readonly Station[] = [
       heading: "Mixes",
       body: "SoundCloud sets and live recordings.",
     },
-    // Return to the counter (no return clip — clicking just sets the counter active again;
-    // per the play-once engine that re-plays the counter's arrival clip from the start).
-    // Forward → right/Crate stays OFF: that wall is still a synthetic placeholder, so only
-    // counter↔Mixes is live this pass.
-    exits: [{ label: "← Back to the counter", to: "counter", direction: "back" }],
+    // Back to the counter (reversed pivot, REVERSE_EDGES left-bins→counter). Plus the ring edge
+    // to Vibes (LEFT turn, FORWARD_EDGES left-bins→mixtape-shelf) — turn left to the Vibes wall.
+    exits: [
+      { label: "← Back to the counter", to: "counter", direction: "back" },
+      { label: "← Vibes", to: "mixtape-shelf", direction: "left" },
+    ],
   },
   {
     id: "right-bins",
@@ -247,11 +248,12 @@ export const STATIONS: readonly Station[] = [
       heading: "Crate",
       body: "A bit of everything.",
     },
-    // Return to the counter plays the pre-encoded reversed pivot (right-bins → counter in
-    // REVERSE_EDGES — turning back). Crate gets ONLY a back-to-counter exit: the onward
-    // ahead/Vibes wall (mixtape-shelf) is still a synthetic "DO NOT SHIP" placeholder, so it
-    // stays unreachable (same discipline as the door→counter coupling, 789ef95).
-    exits: [{ label: "← Back to the counter", to: "counter", direction: "back" }],
+    // Back to the counter (reversed pivot, REVERSE_EDGES right-bins→counter). Plus the ring edge
+    // to Vibes (RIGHT turn, FORWARD_EDGES right-bins→mixtape-shelf) — turn right to the Vibes wall.
+    exits: [
+      { label: "← Back to the counter", to: "counter", direction: "back" },
+      { label: "Vibes →", to: "mixtape-shelf", direction: "right" },
+    ],
   },
   {
     id: "mixtape-shelf",
@@ -277,10 +279,14 @@ export const STATIONS: readonly Station[] = [
       body: "Or just take it all home.",
       cta: { label: "Browse everything →", href: "/music" },
     },
-    // Return to the counter plays the pre-encoded reversed push-in (mixtape-shelf → counter in
-    // REVERSE_EDGES — a safe pull-back, no rain/directional particles). Only a back-to-counter
-    // exit: this is the AHEAD wall, the deepest reachable point — no onward wall beyond it.
-    exits: [{ label: "← Back to the counter", to: "counter", direction: "back" }],
+    // Back to the counter (reversed push-in, REVERSE_EDGES mixtape-shelf→counter — a safe
+    // pull-back). Plus the ring returns to BOTH side walls (REVERSE_EDGES mixtape-shelf→left-bins
+    // / →right-bins): turn right to Mixes, left to Crate — completing the rotational ring.
+    exits: [
+      { label: "← Back to the counter", to: "counter", direction: "back" },
+      { label: "Mixes →", to: "left-bins", direction: "right" },
+      { label: "← Crate", to: "right-bins", direction: "left" },
+    ],
   },
 ] as const;
 
@@ -355,6 +361,23 @@ const REVERSE_EDGES: Readonly<Record<string, TransitionAsset>> = {
     poster: "/transitions/vibes-counter/vibes-counter.poster.jpg",
     durationSec: 2.6,
   },
+  // Ring returns (Vibes ↔ side walls): reversed wall→Vibes pivots, turning back along the ring.
+  // The FORWARD ring edges (Mixes→Vibes, Crate→Vibes) live in FORWARD_EDGES, not here — Vibes
+  // now has multiple inbound forward arrivals, so they can't use the transitionIn fall-through.
+  // mixtape-shelf (Vibes) → left-bins (Mixes): reversed Mixes→Vibes pivot (~2s) — turning back to Mixes.
+  "mixtape-shelf->left-bins": {
+    av1Src: "/transitions/vibes-mixes/vibes-mixes.av1.mp4",
+    h264Src: "/transitions/vibes-mixes/vibes-mixes.h264.mp4",
+    poster: "/transitions/vibes-mixes/vibes-mixes.poster.jpg",
+    durationSec: 2,
+  },
+  // mixtape-shelf (Vibes) → right-bins (Crate): reversed Crate→Vibes pivot (~2s) — turning back to Crate.
+  "mixtape-shelf->right-bins": {
+    av1Src: "/transitions/vibes-crate/vibes-crate.av1.mp4",
+    h264Src: "/transitions/vibes-crate/vibes-crate.h264.mp4",
+    poster: "/transitions/vibes-crate/vibes-crate.poster.jpg",
+    durationSec: 2,
+  },
   // NB: door → street has NO reverse entry on purpose. A reversed street→door push-in runs the
   // rain UPWARD (unshippable), so door→street falls through to street.transitionIn (null) — a
   // clean no-video snap back to the storefront. A real moving return would be a forward-filmed
@@ -362,11 +385,38 @@ const REVERSE_EDGES: Readonly<Record<string, TransitionAsset>> = {
 };
 
 /**
- * Resolve the transition clip for a directed move `from`→`to`.
- *  - An explicit RETURN edge → its pre-encoded reversed clip (the only behaviour change).
- *  - Everything else — forward edges, the no-edge initial mount, unreachable synthetic edges
- *    — falls through to the destination station's `transitionIn`, so forward arrivals and the
- *    starting street state stay byte-for-byte unchanged.
+ * Directed FORWARD-edge overrides — forward arrivals that are NOT the destination's default
+ * `transitionIn`. Needed when a destination has MORE THAN ONE inbound forward arrival: Vibes
+ * (mixtape-shelf) is reached from the counter (push-in, = its `transitionIn`) AND from each side
+ * wall along the ring, so the two ring forwards are keyed per-edge here — otherwise they'd fall
+ * through to the counter→Vibes push-in. Single-arrival destinations keep using `transitionIn`
+ * (no entry here). These are forward-filmed clips (not reversed); same codec spec as the rest.
+ */
+const FORWARD_EDGES: Readonly<Record<string, TransitionAsset>> = {
+  // left-bins (Mixes) → mixtape-shelf (Vibes): the new Mixes→Vibes pivot (~2s, LEFT turn).
+  "left-bins->mixtape-shelf": {
+    av1Src: "/transitions/mixes-vibes/mixes-vibes.av1.mp4",
+    h264Src: "/transitions/mixes-vibes/mixes-vibes.h264.mp4",
+    poster: "/transitions/mixes-vibes/mixes-vibes.poster.jpg",
+    durationSec: 2,
+  },
+  // right-bins (Crate) → mixtape-shelf (Vibes): the new Crate→Vibes pivot (~2s, RIGHT turn).
+  "right-bins->mixtape-shelf": {
+    av1Src: "/transitions/crate-vibes/crate-vibes.av1.mp4",
+    h264Src: "/transitions/crate-vibes/crate-vibes.h264.mp4",
+    poster: "/transitions/crate-vibes/crate-vibes.poster.jpg",
+    durationSec: 2,
+  },
+};
+
+/**
+ * Resolve the transition clip for a directed move `from`→`to`. Checked in order:
+ *  - An explicit RETURN edge (REVERSE_EDGES) → its pre-encoded reversed clip.
+ *  - An explicit FORWARD override (FORWARD_EDGES) → a forward-filmed clip for a destination with
+ *    multiple inbound arrivals (the ring edges into Vibes).
+ *  - Everything else — single-arrival forward edges, the no-edge initial mount, unreachable
+ *    synthetic edges — falls through to the destination's `transitionIn`, so those arrivals and
+ *    the starting street state stay byte-for-byte unchanged.
  * `from` is `null` on the initial mount: you start at the first station, nothing played you in.
  */
 export function resolveTransition(
@@ -376,6 +426,8 @@ export function resolveTransition(
   if (from) {
     const reverse = REVERSE_EDGES[`${from}->${to}`];
     if (reverse) return reverse;
+    const forward = FORWARD_EDGES[`${from}->${to}`];
+    if (forward) return forward;
   }
   const dest = STATIONS[getStationIndex(to)];
   return dest ? dest.transitionIn : null;
