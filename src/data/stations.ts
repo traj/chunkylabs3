@@ -217,11 +217,16 @@ export const STATIONS: readonly Station[] = [
       heading: "Mixes",
       body: "SoundCloud sets and live recordings.",
     },
-    // Back to the counter (reversed pivot, REVERSE_EDGES left-bins→counter). Plus the ring edge
-    // to Vibes (LEFT turn, FORWARD_EDGES left-bins→mixtape-shelf) — turn left to the Vibes wall.
+    // Two ways to the counter, intentionally DISTINCT (do not "dedupe"): the persistent top-left
+    // "← Back to the counter" is the HOME/hub button present on every station; the RIGHT-side
+    // "Counter →" is the SPATIAL directional exit — facing the Mixes wall, the counter is to your
+    // RIGHT and Vibes to your LEFT. Both wire to the existing counter↔Mixes edge (no new
+    // transition). The ring edge to Vibes (LEFT turn, FORWARD_EDGES left-bins→mixtape-shelf) sits
+    // on the left. (back=top-left · left=left-centre · right=right-centre — no zone collision.)
     exits: [
       { label: "← Back to the counter", to: "counter", direction: "back" },
       { label: "← Vibes", to: "mixtape-shelf", direction: "left" },
+      { label: "Counter →", to: "counter", direction: "right" },
     ],
   },
   {
@@ -248,11 +253,16 @@ export const STATIONS: readonly Station[] = [
       heading: "Crate",
       body: "A bit of everything.",
     },
-    // Back to the counter (reversed pivot, REVERSE_EDGES right-bins→counter). Plus the ring edge
-    // to Vibes (RIGHT turn, FORWARD_EDGES right-bins→mixtape-shelf) — turn right to the Vibes wall.
+    // Two ways to the counter, intentionally DISTINCT (do not "dedupe"): the persistent top-left
+    // "← Back to the counter" is the HOME/hub button present on every station; the LEFT-side
+    // "← Counter" is the SPATIAL directional exit — facing the Crate wall, the counter is to your
+    // LEFT and Vibes to your RIGHT. Both wire to the existing counter↔Crate edge (no new
+    // transition). The ring edge to Vibes (RIGHT turn, FORWARD_EDGES right-bins→mixtape-shelf)
+    // sits on the right. (back=top-left · left=left-centre · right=right-centre — no collision.)
     exits: [
       { label: "← Back to the counter", to: "counter", direction: "back" },
       { label: "Vibes →", to: "mixtape-shelf", direction: "right" },
+      { label: "← Counter", to: "counter", direction: "left" },
     ],
   },
   {

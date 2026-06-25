@@ -164,9 +164,12 @@ export function StationFrame({
             bottom-centre). The click is the user gesture that grants iOS media autoplay, so we
             markUnlocked() synchronously IN the handler (before the re-render mounts the next
             clip) to capture that transient activation, then swap. */}
+        {/* Key on to+direction, not `to` alone: a station may have TWO exits to the same
+            destination — e.g. a side wall's persistent top-left "home" button AND its spatial
+            directional counter exit both navigate to the counter (intentional, see stations.ts). */}
         {station.exits?.map((exit) => (
           <button
-            key={exit.to}
+            key={`${exit.to}:${exit.direction ?? ""}`}
             type="button"
             onClick={() => {
               markUnlocked();
