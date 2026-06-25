@@ -25,6 +25,15 @@ import { PlaybackUnlockProvider } from "@/components/stations/PlaybackUnlock";
 // Mirror StationTransition's KEEP_WINDOW: mount active±1 so the decode budget (~3) holds.
 const KEEP_WINDOW = 1;
 
+// Directed edges that CROSSFADE the scene swap (~450ms opacity dissolve) instead of snapping.
+// Only edges with NO transition clip belong here — the dissolve stands in for the missing
+// motion. `door->street` is the sole member: its return has no reversed clip (a reversed
+// street→door push-in would run the rain UPWARD — see REVERSE_EDGES), so without this it hard-
+// snaps to the storefront. Video edges are NOT listed: their clip already carries the motion,
+// so they must keep snapping (the scene swaps in place under the playing video). Keyed
+// `from->to`; an edge not in this set is byte-identical to the previous instant swap.
+const CROSSFADE_EDGES = new Set<string>(["door->street"]);
+
 export function StoreWalkthrough() {
   const lenis = useLenis();
   const [active, setActive] = useState(0);
@@ -75,6 +84,10 @@ export function StoreWalkthrough() {
     setActive(idx);
   }
 
+  // Is the edge we just traversed (cameFrom → active) a gated, clip-less crossfade edge?
+  const crossfadeActive =
+    cameFrom != null && CROSSFADE_EDGES.has(`${cameFrom}->${STATIONS[active].id}`);
+
   return (
     <PlaybackUnlockProvider>
       {/* Fixed, full-viewport stage. Scenes are absolutely positioned inside and swap in
@@ -88,6 +101,14 @@ export function StoreWalkthrough() {
           // its <source>s never remount as it becomes active — the clip just starts playing.
           const fromId = i === active ? cameFrom : STATIONS[active].id;
           const asset = resolveTransition(fromId, station.id);
+          // Gated crossfade role for a clip-less return (only door→street today). Active scene
+          // fades in over the outgoing one, which fades out underneath — both rest at their
+          // normal opacity, so non-crossfade edges stay byte-identical.
+          let crossfade: "in" | "out" | undefined;
+          if (crossfadeActive) {
+            if (i === active) crossfade = "in";
+            else if (station.id === cameFrom) crossfade = "out";
+          }
           return (
             <StationFrame
               key={station.id}
@@ -97,6 +118,7 @@ export function StoreWalkthrough() {
               total={total}
               activeIndex={active}
               goToId={goToId}
+              crossfade={crossfade}
             />
           );
         })}
