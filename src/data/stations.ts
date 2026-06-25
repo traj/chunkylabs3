@@ -10,6 +10,14 @@
  * transition engine and CMS will fill. No transition engine or real video lives here yet.
  */
 
+/**
+ * Stable station ids — the scaffold identities. These INTENTIONALLY differ from the
+ * user-facing display labels for now: `left-bins` shows as "Mixes", `right-bins` as "Crate",
+ * `mixtape-shelf` as "Vibes" (see each station's `label`/`dom`/`exits`). Renaming the ids
+ * themselves ripples through this union, the resolver edges (REVERSE_EDGES keys), and the
+ * /transitions asset paths, so it is a separate, deliberate refactor (the id→wall rename — a
+ * deferred design thread). Keep id ≠ label until that pass.
+ */
 export type StationId =
   | "street"
   | "door"
@@ -25,8 +33,13 @@ export type StationId =
  *  - Ordered <source>: AV1 (Profile 0, 8-bit) first, H.264/MP4 last.
  *  - H.264/MP4 is the MANDATORY floor. `h264Src` is what guarantees playback on every
  *    device; `av1Src` is an optional progressive upgrade. Never ship AV1-only.
- *  - `poster` is the first frame, shown before play AND as the fallback when autoplay is
- *    blocked (Low Power Mode is undetectable — §Q2).
+ *  - `poster` is the FIRST frame, shown before play AND as the autoplay-blocked fallback
+ *    (Low Power Mode is undetectable — §Q2). First-frame is DELIBERATE, not a stopgap: the
+ *    engine plays every clip from `currentTime = 0`, and the poster's only visible role is the
+ *    brief cold-mount decode gap + the blocked-autoplay backdrop — so it must MATCH frame 0 to
+ *    precede playback seamlessly. A last-frame poster would paint the destination, then the clip
+ *    would snap back to frame 0 to play (a visible backward jump). The HELD "you are here" view
+ *    is the video's OWN last decoded frame, not this poster. Verified at full speed 2026-06-25.
  *
  * All fields are optional because no real clips are encoded yet — this is the shape only.
  */
@@ -80,7 +93,7 @@ export interface Station {
   id: StationId;
   /** 1-based position in the walk-through. */
   order: number;
-  /** Human-readable name, e.g. "Left Bins". */
+  /** Human-readable display name, e.g. "Mixes" — may differ from `id` (see StationId). */
   label: string;
   /** URL-safe slug. Kept distinct from `id` on purpose so they can diverge later. */
   slug: string;
@@ -105,7 +118,7 @@ export interface Station {
  * THE ordered sequence. Order in this array is authoritative — derive everything
  * (navigation, progress, prev/next) from it. Do not hard-code order anywhere else.
  *
- * street → door push-in → counter/clerk → left bins → right bins → mixtape shelf
+ * street → door push-in → counter/clerk → Mixes (left-bins) → Crate (right-bins) → Vibes (mixtape-shelf)
  *
  * `transitionIn` is `null`/empty for now: placeholders only, no real video.
  */
@@ -179,17 +192,17 @@ export const STATIONS: readonly Station[] = [
     // reachable anywhere — the store is fully filmed.
     exits: [
       { label: "← Back to the door", to: "door", direction: "back" },
-      { label: "← To the mixes", to: "left-bins", direction: "left" },
-      { label: "To the crates →", to: "right-bins", direction: "right" },
-      { label: "To the vibes ↑", to: "mixtape-shelf", direction: "forward" },
+      { label: "← Mixes", to: "left-bins", direction: "left" },
+      { label: "Crate →", to: "right-bins", direction: "right" },
+      { label: "Vibes ↑", to: "mixtape-shelf", direction: "forward" },
     ],
   },
   {
     id: "left-bins",
     order: 4,
-    label: "Left Bins",
+    label: "Mixes",
     slug: "left-bins",
-    description: "Crates down the left wall. Flip through the records.",
+    description: "The left wall. Mixes and live sets, end to end.",
     transitionIn: {
       // Real encode (counter → Mixes wall, a left pan/turn, ~4s — re-encoded at 2x from the
       // original 8s). This is the left/Mixes wall — SoundCloud mixes / live sets — reached by
@@ -201,8 +214,8 @@ export const STATIONS: readonly Station[] = [
       durationSec: 4,
     },
     dom: {
-      heading: "Left Bins",
-      body: "Dig through the crates.",
+      heading: "Mixes",
+      body: "SoundCloud sets and live recordings.",
     },
     // Return to the counter (no return clip — clicking just sets the counter active again;
     // per the play-once engine that re-plays the counter's arrival clip from the start).
@@ -213,24 +226,26 @@ export const STATIONS: readonly Station[] = [
   {
     id: "right-bins",
     order: 5,
-    label: "Right Bins",
+    label: "Crate",
     slug: "right-bins",
-    description: "More crates down the right wall.",
+    description: "The right wall. A crate of everything.",
     transitionIn: {
       // Real encode (counter → Crate wall, a RIGHT pivot, ~4s — 2×'d from the original 8s
       // Cinema Studio pivot, the locked pivot recipe used for Mixes). The right/Crate dig-bin
       // wall, reached by turning right from the counter hub. AV1 av01.0.08M.08 + H.264
       // avc1.4D4028, matching the engine's <source> types (codec strings parsed from the
-      // av1C/avcC boxes). NOTE: poster is the first frame (the counter) — the known, deferred
-      // poster=first-frame item, intentionally NOT fixed here.
+      // av1C/avcC boxes). Poster is the first frame (the counter) — CORRECT, not a stopgap: the
+      // clip plays from frame 0, so a frame-0 poster seamlessly precedes the pivot (a last-frame
+      // poster would flash the Crate wall, then jump back to the counter to play). See the
+      // TransitionAsset `poster` contract above for the full rationale.
       av1Src: "/transitions/crate/crate.av1.mp4",
       h264Src: "/transitions/crate/crate.h264.mp4",
       poster: "/transitions/crate/crate.poster.jpg",
       durationSec: 4,
     },
     dom: {
-      heading: "Right Bins",
-      body: "Keep digging.",
+      heading: "Crate",
+      body: "A bit of everything.",
     },
     // Return to the counter plays the pre-encoded reversed pivot (right-bins → counter in
     // REVERSE_EDGES — turning back). Crate gets ONLY a back-to-counter exit: the onward
@@ -241,9 +256,9 @@ export const STATIONS: readonly Station[] = [
   {
     id: "mixtape-shelf",
     order: 6,
-    label: "Mixtape Shelf",
+    label: "Vibes",
     slug: "mixtape-shelf",
-    description: "Hand-made mixtapes on the back shelf. One of a kind.",
+    description: "Straight ahead. The Vibes series and featured picks.",
     transitionIn: {
       // Real encode (counter → Vibes wall, a forward PUSH-IN — the door/counter push recipe,
       // no pivot/no 2× pass). Trimmed to 2.6s: the Veo source is clean to ~2.7s then dissolves
@@ -258,7 +273,7 @@ export const STATIONS: readonly Station[] = [
       durationSec: 2.6,
     },
     dom: {
-      heading: "Mixtape Shelf",
+      heading: "Vibes",
       body: "Or just take it all home.",
       cta: { label: "Browse everything →", href: "/music" },
     },

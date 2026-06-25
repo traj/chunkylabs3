@@ -122,10 +122,18 @@ otherwise keeps the exact spec it already encodes to.
   cleanly).
 - **H.264:** libx264, Main profile, broadly compatible level, `+faststart`. **The
   mandatory floor** — never ship AV1-only. Parse `avcC` for the real string.
-- **Poster:** first frame, jpg. **KNOWN BUG, deferred:** on a *pivot*, frame 1 is the
-  *counter* (start of the turn), so the poster shows where you LEFT, not the wall you
-  land on. Non-blocking (engine plays on gesture + holds the end frame), but the
-  encode-hardening fix is **poster = LAST frame for held-arrival clips**.
+- **Poster:** first frame, jpg — and **deliberately so** (verified at full speed
+  2026-06-25; *not* a bug, the earlier "deferred fix" is **rejected**). The engine plays
+  every clip from `currentTime 0` and HOLDS the video's *own* last decoded frame as the
+  rested "you are here" view; the `poster` is only ever shown in the brief cold-mount decode
+  gap (~90–125ms, measured) and behind the autoplay-blocked tap-to-play backdrop. So the
+  poster must MATCH frame 0 to precede playback seamlessly — which on a *pivot* is the counter
+  (where you ARE as the turn starts), exactly right. A LAST-frame poster (the earlier proposal)
+  would paint the *destination* wall, then snap back to frame 0 to play — a visible backward
+  jump, worse on slow mobile decode. The cold-mount "black flash" that motivated revisiting
+  this was a **Slow-3G artifact** (a download stand-in that never exercises the decode gap); at
+  real speed the warmed poster (StoreWalkthrough's exit-poster preload) covers the gap.
+  `encode.sh` stays **first-frame** in all three modes (`--real`, `--reverse`, synthetic).
 - Target 1080p, GOP ~2s (not keyframe-dense — these are play-through, never scrubbed).
 - **2× SPEED PASS for pivots (LOCKED standard).** Raw Cinema Studio pivots run ~8s,
   which feels slow in a click-hub. Halve them with ffmpeg `setpts=PTS/2.0` (drops dup
