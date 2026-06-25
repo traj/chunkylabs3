@@ -272,6 +272,9 @@ export const STATIONS: readonly Station[] = [
     slug: "mixtape-shelf",
     description: "Straight ahead. The Vibes series and featured picks.",
     transitionIn: {
+      // RETIRED from the active path (kept on disk as fallback): counter→Vibes now plays the
+      // CHAINED EXPRESS (EXPRESS_EDGES), not this straight-across push-in — every edge INTO Vibes
+      // is express (counter) or forward ring (Mixes/Crate), so this transitionIn never resolves.
       // Real encode (counter → Vibes wall, a forward PUSH-IN — the door/counter push recipe,
       // no pivot/no 2× pass). Trimmed to 2.6s: the Veo source is clean to ~2.7s then dissolves
       // into an invented wall, so only the clean head ships. This is the ahead/Vibes (j2
@@ -363,14 +366,11 @@ const REVERSE_EDGES: Readonly<Record<string, TransitionAsset>> = {
     poster: "/transitions/crate-counter/crate-counter.poster.jpg",
     durationSec: 2,
   },
-  // mixtape-shelf (Vibes) → counter: reversed counter→Vibes push-in (2.6s) — a safe pull-back
-  // (no rain/directional particles, unlike door→street). Turning back to the hub.
-  "mixtape-shelf->counter": {
-    av1Src: "/transitions/vibes-counter/vibes-counter.av1.mp4",
-    h264Src: "/transitions/vibes-counter/vibes-counter.h264.mp4",
-    poster: "/transitions/vibes-counter/vibes-counter.poster.jpg",
-    durationSec: 2.6,
-  },
+  // mixtape-shelf (Vibes) → counter: RETIRED from the active path. It used to play the reversed
+  // counter→Vibes push-in (vibes-counter, 2.6s, straight across the room); the counter↔Vibes trip
+  // is now a CHAINED EXPRESS that circles the ring (two quarters, EXPRESS_EDGES below). The
+  // vibes-counter files stay on disk as a fallback — resolveTransition checks EXPRESS first, so
+  // this edge resolves to the express even with no entry here.
   // Ring returns (Vibes ↔ side walls): reversed wall→Vibes pivots, turning back along the ring.
   // The FORWARD ring edges (Mixes→Vibes, Crate→Vibes) live in FORWARD_EDGES, not here — Vibes
   // now has multiple inbound forward arrivals, so they can't use the transitionIn fall-through.
@@ -420,7 +420,42 @@ const FORWARD_EDGES: Readonly<Record<string, TransitionAsset>> = {
 };
 
 /**
+ * Directed CHAINED-EXPRESS edges — the counter↔Vibes trip. Instead of a straight-across push-in,
+ * the camera CIRCLES the room: two existing quarter clips are pre-concatenated (with a ~6-frame
+ * crossfade masking the geometric seam — the held end frame of clip 1 and the start frame of
+ * clip 2 are the same wall but NOT pixel-aligned, PSNR ~14–18, so a hard cut would jump) and
+ * compressed to ~2.0s, so every trip takes the same time regardless of distance. Each direction
+ * has TWO side-routes (via Mixes / via Crate); the controller (StoreWalkthrough) rolls one 50/50
+ * PER TRIP — out via one side may return via the other ("circle the room"). To the engine these
+ * are ordinary SINGLE 2.0s clips (no runtime chaining / playbackRate). The two side-routes of a
+ * direction share ONE poster — their first frame is the same wall (counter outbound, Vibes
+ * return) — so the cold-mount poster-warm stays a cache hit whichever side is rolled.
+ * `resolveTransition` returns side[0] as the representative (what poster-warm reads + a safe
+ * deterministic fallback); the actually-played clip is the controller's roll. The direct push-in
+ * (vibes.*) and vibes-counter.* files are kept on disk but no longer resolve.
+ */
+const CV_POSTER = "/transitions/cv-mixes/cv-mixes.poster.jpg"; // counter (shared outbound first frame)
+const VC_POSTER = "/transitions/vc-mixes/vc-mixes.poster.jpg"; // Vibes wall (shared return first frame)
+export const EXPRESS_EDGES: Readonly<
+  Record<string, readonly [TransitionAsset, TransitionAsset]>
+> = {
+  // counter → Vibes:  counter→Mixes ⌢ Mixes→Vibes   |   counter→Crate ⌢ Crate→Vibes
+  "counter->mixtape-shelf": [
+    { av1Src: "/transitions/cv-mixes/cv-mixes.av1.mp4", h264Src: "/transitions/cv-mixes/cv-mixes.h264.mp4", poster: CV_POSTER, durationSec: 2 },
+    { av1Src: "/transitions/cv-crate/cv-crate.av1.mp4", h264Src: "/transitions/cv-crate/cv-crate.h264.mp4", poster: CV_POSTER, durationSec: 2 },
+  ],
+  // Vibes → counter:  Vibes→Mixes ⌢ Mixes→counter   |   Vibes→Crate ⌢ Crate→counter
+  "mixtape-shelf->counter": [
+    { av1Src: "/transitions/vc-mixes/vc-mixes.av1.mp4", h264Src: "/transitions/vc-mixes/vc-mixes.h264.mp4", poster: VC_POSTER, durationSec: 2 },
+    { av1Src: "/transitions/vc-crate/vc-crate.av1.mp4", h264Src: "/transitions/vc-crate/vc-crate.h264.mp4", poster: VC_POSTER, durationSec: 2 },
+  ],
+};
+
+/**
  * Resolve the transition clip for a directed move `from`→`to`. Checked in order:
+ *  - A CHAINED-EXPRESS edge (EXPRESS_EDGES) → the representative side[0] (counter↔Vibes). The
+ *    controller overrides with its 50/50 side roll; side[0]'s shared poster is what poster-warm
+ *    reads, and it's a safe deterministic fallback if the controller doesn't override.
  *  - An explicit RETURN edge (REVERSE_EDGES) → its pre-encoded reversed clip.
  *  - An explicit FORWARD override (FORWARD_EDGES) → a forward-filmed clip for a destination with
  *    multiple inbound arrivals (the ring edges into Vibes).
@@ -434,6 +469,8 @@ export function resolveTransition(
   to: StationId,
 ): TransitionAsset | null {
   if (from) {
+    const express = EXPRESS_EDGES[`${from}->${to}`];
+    if (express) return express[0];
     const reverse = REVERSE_EDGES[`${from}->${to}`];
     if (reverse) return reverse;
     const forward = FORWARD_EDGES[`${from}->${to}`];

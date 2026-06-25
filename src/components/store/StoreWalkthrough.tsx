@@ -2,7 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { useLenis } from "lenis/react";
-import { STATIONS, resolveTransition, type StationId } from "@/data/stations";
+import {
+  STATIONS,
+  resolveTransition,
+  EXPRESS_EDGES,
+  type StationId,
+  type TransitionAsset,
+} from "@/data/stations";
 import { StationFrame } from "@/components/stations/StationFrame";
 import { PlaybackUnlockProvider } from "@/components/stations/PlaybackUnlock";
 
@@ -41,6 +47,10 @@ export function StoreWalkthrough() {
   // with the active station it names the edge, which is what resolves the clip to play (a
   // return plays its pre-encoded reversed asset). `null` on first mount: nothing played us in.
   const [cameFrom, setCameFrom] = useState<StationId | null>(null);
+  // The chained-express clip chosen for the trip just started (counter↔Vibes), rolled 50/50 per
+  // trip in goToId. `null` for every normal single-quarter edge. Lets the destination play the
+  // randomly-routed express while the pure resolver stays deterministic (poster-warm + fallback).
+  const [expressAsset, setExpressAsset] = useState<TransitionAsset | null>(null);
   const total = STATIONS.length;
 
   // /store is true zero-scroll. Lenis is a GLOBAL root provider (it must keep working on
@@ -80,7 +90,14 @@ export function StoreWalkthrough() {
     if (idx === -1 || idx === active) return;
     // Record the traversed edge before moving: `from` is the current active station (already
     // in scope — previously discarded). The new active's clip is resolved from (from → to).
-    setCameFrom(STATIONS[active].id);
+    const fromId = STATIONS[active].id;
+    // Chained-express edges (counter↔Vibes) roll a side 50/50 PER TRIP — out via one wall may
+    // return via the other ("circle the room"). The roll is a click-time runtime decision (kept
+    // OUT of the pure resolver), stored so the destination's StationTransition plays the chosen
+    // express. Set to null for every other edge so it never leaks into a normal transition.
+    const express = EXPRESS_EDGES[`${fromId}->${to}`];
+    setExpressAsset(express ? express[Math.random() < 0.5 ? 0 : 1] : null);
+    setCameFrom(fromId);
     setActive(idx);
   }
 
@@ -100,7 +117,13 @@ export function StoreWalkthrough() {
           // it (active → neighbour). Both name the SAME edge for the station mid-transition, so
           // its <source>s never remount as it becomes active — the clip just starts playing.
           const fromId = i === active ? cameFrom : STATIONS[active].id;
-          const asset = resolveTransition(fromId, station.id);
+          // The ACTIVE station plays the controller's 50/50 express roll when the edge just
+          // traversed was a chained express (counter↔Vibes); every other station/edge resolves
+          // normally (neighbours preload their own edge; non-express actives use the resolver).
+          const asset =
+            i === active && expressAsset
+              ? expressAsset
+              : resolveTransition(fromId, station.id);
           // Gated crossfade role for a clip-less return (only door→street today). Active scene
           // fades in over the outgoing one, which fades out underneath — both rest at their
           // normal opacity, so non-crossfade edges stay byte-identical.
