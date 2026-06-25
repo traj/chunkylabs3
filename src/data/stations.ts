@@ -204,14 +204,14 @@ export const STATIONS: readonly Station[] = [
     slug: "left-bins",
     description: "The left wall. Mixes and live sets, end to end.",
     transitionIn: {
-      // Real encode (counter → Mixes wall, a left pan/turn, ~4s — re-encoded at 2x from the
-      // original 8s). This is the left/Mixes wall — SoundCloud mixes / live sets — reached by
+      // Real encode (counter → Mixes wall, a left pan/turn, ~2s — re-encoded at 4× from the
+      // original 8s raw, a snappy quarter-turn for the click-hub). This is the left/Mixes wall — SoundCloud mixes / live sets — reached by
       // turning left from the counter hub. AV1 av01.0.08M.08 + H.264 avc1.4D4028, matching the
       // engine's <source> types (codec strings parsed from the av1C/avcC boxes).
       av1Src: "/transitions/mixes/mixes.av1.mp4",
       h264Src: "/transitions/mixes/mixes.h264.mp4",
       poster: "/transitions/mixes/mixes.poster.jpg",
-      durationSec: 4,
+      durationSec: 2,
     },
     dom: {
       heading: "Mixes",
@@ -230,8 +230,8 @@ export const STATIONS: readonly Station[] = [
     slug: "right-bins",
     description: "The right wall. A crate of everything.",
     transitionIn: {
-      // Real encode (counter → Crate wall, a RIGHT pivot, ~4s — 2×'d from the original 8s
-      // Cinema Studio pivot, the locked pivot recipe used for Mixes). The right/Crate dig-bin
+      // Real encode (counter → Crate wall, a RIGHT pivot, ~2s — 4×'d from the original 8s
+      // Cinema Studio raw, a snappy quarter-turn matching Mixes). The right/Crate dig-bin
       // wall, reached by turning right from the counter hub. AV1 av01.0.08M.08 + H.264
       // avc1.4D4028, matching the engine's <source> types (codec strings parsed from the
       // av1C/avcC boxes). Poster is the first frame (the counter) — CORRECT, not a stopgap: the
@@ -241,7 +241,7 @@ export const STATIONS: readonly Station[] = [
       av1Src: "/transitions/crate/crate.av1.mp4",
       h264Src: "/transitions/crate/crate.h264.mp4",
       poster: "/transitions/crate/crate.poster.jpg",
-      durationSec: 4,
+      durationSec: 2,
     },
     dom: {
       heading: "Crate",
@@ -333,19 +333,19 @@ const REVERSE_EDGES: Readonly<Record<string, TransitionAsset>> = {
     poster: "/transitions/counter-door/counter-door.poster.jpg",
     durationSec: 8,
   },
-  // left-bins (Mixes) → counter: reversed counter→Mixes pivot (~4s) — turning back to the hub.
+  // left-bins (Mixes) → counter: reversed counter→Mixes pivot (~2s) — turning back to the hub.
   "left-bins->counter": {
     av1Src: "/transitions/mixes-counter/mixes-counter.av1.mp4",
     h264Src: "/transitions/mixes-counter/mixes-counter.h264.mp4",
     poster: "/transitions/mixes-counter/mixes-counter.poster.jpg",
-    durationSec: 4,
+    durationSec: 2,
   },
-  // right-bins (Crate) → counter: reversed counter→Crate pivot (~4s) — turning back to the hub.
+  // right-bins (Crate) → counter: reversed counter→Crate pivot (~2s) — turning back to the hub.
   "right-bins->counter": {
     av1Src: "/transitions/crate-counter/crate-counter.av1.mp4",
     h264Src: "/transitions/crate-counter/crate-counter.h264.mp4",
     poster: "/transitions/crate-counter/crate-counter.poster.jpg",
-    durationSec: 4,
+    durationSec: 2,
   },
   // mixtape-shelf (Vibes) → counter: reversed counter→Vibes push-in (2.6s) — a safe pull-back
   // (no rain/directional particles, unlike door→street). Turning back to the hub.
