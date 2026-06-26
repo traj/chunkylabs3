@@ -185,13 +185,15 @@ export const STATIONS: readonly Station[] = [
       heading: "The Counter",
       body: "Ask the clerk anything. (Voice lines are placeholders for now.)",
     },
-    // Reachable hub (street → door → counter). ALL THREE walls are now real, each with a
+    // Reachable hub. The BACK exit now leaves straight OUT to the street as an opacity crossfade
+    // (CROSSFADE_EDGES counter->street, no video), replacing the old reversed door→counter push-in.
+    // That reverse edge (REVERSE_EDGES counter->door) is therefore now unreachable/DEAD — entry +
+    // asset kept on disk for a later cleanup pass. The three WALLS stay real, each with a
     // pre-encoded reversed return (see REVERSE_EDGES): turn LEFT to Mixes (left-bins), RIGHT to
-    // Crate (right-bins), and AHEAD to Vibes (mixtape-shelf). Reachable graph: street ↔ door ↔
-    // counter, counter ↔ Mixes/Crate/Vibes, AND the ring Mixes ↔ Vibes ↔ Crate (wall-to-wall) —
-    // full rotational nav. No synthetic placeholder reachable anywhere — the store is fully filmed.
+    // Crate (right-bins), and AHEAD to Vibes (mixtape-shelf). The ring Mixes ↔ Vibes ↔ Crate
+    // (wall-to-wall) is intact — full rotational nav. No synthetic placeholder reachable anywhere.
     exits: [
-      { label: "← Back to the door", to: "door", direction: "back" },
+      { label: "← Back to the street", to: "street", direction: "back" },
       { label: "← Mixes", to: "left-bins", direction: "left" },
       { label: "Crate →", to: "right-bins", direction: "right" },
       { label: "Vibes ↑", to: "mixtape-shelf", direction: "forward" },
@@ -344,8 +346,9 @@ export function getPrevStation(id: StationId): Station | undefined {
  * same codec spec as the forwards (av01.0.08M.08 / avc1.4D4028).
  */
 const REVERSE_EDGES: Readonly<Record<string, TransitionAsset>> = {
-  // counter → door: reversed door→counter push-in. 8s (inherits the forward length); may be
-  // 2×'d later if the back-out drags — not this pass.
+  // counter → door: reversed door→counter push-in. 8s (inherits the forward length). NOW DEAD —
+  // the counter's back exit fades straight OUT to the street (CROSSFADE_EDGES counter->street), so
+  // no exit traverses counter→door anymore. Entry + asset kept on disk for a later cleanup pass.
   "counter->door": {
     av1Src: "/transitions/counter-door/counter-door.av1.mp4",
     h264Src: "/transitions/counter-door/counter-door.h264.mp4",

@@ -32,13 +32,21 @@ import { PlaybackUnlockProvider } from "@/components/stations/PlaybackUnlock";
 const KEEP_WINDOW = 1;
 
 // Directed edges that CROSSFADE the scene swap (~450ms opacity dissolve) instead of snapping.
-// Only edges with NO transition clip belong here — the dissolve stands in for the missing
-// motion. `door->street` is the sole member: its return has no reversed clip (a reversed
-// street→door push-in would run the rain UPWARD — see REVERSE_EDGES), so without this it hard-
-// snaps to the storefront. Video edges are NOT listed: their clip already carries the motion,
-// so they must keep snapping (the scene swaps in place under the playing video). Keyed
-// `from->to`; an edge not in this set is byte-identical to the previous instant swap.
-const CROSSFADE_EDGES = new Set<string>(["door->street"]);
+// Only edges with NO transition clip belong here — the dissolve stands in for the missing motion.
+// Members:
+//  - `door->street`: the return has no reversed clip (a reversed street→door push-in would run the
+//    rain UPWARD — see REVERSE_EDGES), so without this it hard-snaps to the storefront. door
+//    (cameFrom) is index-adjacent to street, so it stays mounted and cross-dissolves OUT.
+//  - `counter->street`: the counter's back exit now leaves straight OUT to the street as a fade,
+//    replacing the retired reversed door→counter video. NOTE: counter (idx 2) is TWO from street
+//    (idx 0), outside the active±1 mount window, so — unlike door→street — the outgoing counter
+//    frame is not mounted to dissolve; the street (video-less placeholder) simply fades IN. A true
+//    counter-held-frame cross-dissolve would need both mount windows widened (engine work,
+//    intentionally out of scope). The no-video opacity fade is the shipped behaviour.
+// Video edges are NOT listed: their clip already carries the motion, so they must keep snapping
+// (the scene swaps in place under the playing video). Keyed `from->to`; an edge not in this set
+// is byte-identical to the previous instant swap.
+const CROSSFADE_EDGES = new Set<string>(["door->street", "counter->street"]);
 
 export function StoreWalkthrough() {
   const lenis = useLenis();
