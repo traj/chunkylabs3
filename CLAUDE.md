@@ -12,14 +12,22 @@ hub** they turn to the **Mixes** wall (left), **Crate** wall (right), and **Vibe
 pre-rendered, **play-through** video transitions that play once and **hold their final
 frame**, with live DOM layers (text, music embeds, CTAs) composited over the video.
 
-The **play-through transition engine is built and shipping real footage.** Three transitions
-are real (street→door, door→counter, counter→Mixes); the remaining walls (Crate, Vibes) are
-still synthetic "DO NOT SHIP" placeholders and are intentionally **unreachable** until filmed
-(an exit never routes into an unfilmed wall). The real catalog is ported into
-`src/data/inventory.ts`. Stations still carry their scaffold ids
-(`street/door/counter/left-bins/right-bins/mixtape-shelf`); the id→wall rename
-(e.g. `left-bins` *is* the Mixes wall) is a deferred design thread. The dated session logs in
-`docs/` and `docs/asset-pipeline-spec.md` carry the build history and the asset recipe.
+The **play-through transition engine is built and the store is FULLY FILMED on real footage.**
+Every edge is real: the entry lead-in (**street → door → counter**), all three walls off the
+counter hub (**Mixes** left, **Crate** right, **Vibes** ahead), and the **rotational ring**
+between the walls (Mixes ↔ Vibes ↔ Crate) — so the room can be circled either direction.
+counter↔Vibes is a **chained circular express** (it travels around the ring via a random side
+wall, never straight across); every hub rotation is a uniform snappy **1.0s**. No synthetic
+"DO NOT SHIP" placeholder is reachable anywhere (the `_placeholder/` set stays only as the
+encode fixture). The **entry is a three-beat sequence**: the street rests on a storefront
+still (out0) — no longer a black screen — then **street → door is a walk-up clip** onto the
+canonical **centered storefront** (out1), then door → counter (the one hard exterior→interior
+seam, held together by the "multiple rooms" fiction). The OG asymmetric storefront is RETIRED
+(dead on disk). The real catalog is ported into `src/data/inventory.ts`. Stations still carry
+their scaffold ids (`street/door/counter/left-bins/right-bins/mixtape-shelf`); the id→wall
+rename (e.g. `left-bins` *is* the Mixes wall) is a deferred design thread. The dated session
+logs in `docs/sessions/` and `docs/asset-pipeline-spec.md` carry the build history and the
+asset recipe.
 
 The audience is **majority mobile, iOS-heavy**. iOS Safari is the constraint that decides
 the architecture. Every video/animation decision traces back to the research in
@@ -59,7 +67,7 @@ Key routes:
 
 - `/` — entry screen (two first-class paths: *Enter the store* and *Skip intro → music*).
 - `/store` — the click-navigated four-walls hub (zero-scroll; on-screen directional CTAs;
-  real clips on the reachable walls, synthetic placeholders elsewhere).
+  real footage on every reachable edge — entry, all four walls, and the rotational ring).
 - `/music` — the escape hatch: plain, server-rendered inventory. No video dependency.
 
 ## Architecture & layout
@@ -97,9 +105,10 @@ src/
 **Data flow / source of truth.** `src/data/stations.ts` `STATIONS` is authoritative for the
 station set and each station's `exits` (the click-nav graph). Navigation (`goToId`), the
 active scene, the decoder window, and which scene renders all derive from it — never
-hard-code station order or routes anywhere else. An exit must never target a wall whose
-transition clip doesn't exist yet (it would walk visitors into a "DO NOT SHIP" test pattern),
-so unfilmed walls stay unreachable. `src/data/inventory.ts` is the data behind `/music` and
+hard-code station order or routes anywhere else. INVARIANT: an exit must never target a scene
+whose transition clip doesn't exist (it would walk visitors into a "DO NOT SHIP" test pattern).
+Every wall is currently filmed, so this is now a guard for any future unfilmed scene, not an
+active constraint. `src/data/inventory.ts` is the data behind `/music` and
 (later) the wall content surfaces; it is pure data with no browser or video dependency, so it
 stays server-renderable.
 
@@ -131,9 +140,10 @@ animation — it is **not** what advances the store.
   server components.
 - **Animations:** always `useGSAP()` with `{ scope: ref }`; use `contextSafe` for
   event-/timeout-created animations so Strict Mode cleanup reverts them.
-- **Placeholders are labeled as placeholders.** The remaining walls still point at synthetic
-  "DO NOT SHIP" clips; don't quietly promote a stand-in, and don't route an exit into a wall
-  whose real clip doesn't exist yet (real wall clips are separate, deliberate tasks).
+- **Placeholders are labeled as placeholders.** Every wall now ships real footage; the
+  `_placeholder/` "DO NOT SHIP" set remains only as the encode/regression fixture. Keep the
+  discipline: don't quietly promote a stand-in, and don't route an exit into a scene whose
+  real clip doesn't exist yet.
 - **After loading async content** (video/images/fonts), call `ScrollTrigger.refresh()` so
   trigger positions stay correct.
 
@@ -172,11 +182,11 @@ an explicit decision recorded in `docs/research/`.
   decision touches codecs, autoplay, scrubbing, or scroll, cite the relevant section rather
   than re-deriving or guessing. If reality conflicts with the doc, update the doc in the same
   change — don't silently diverge.
-- **Don't expand scope.** The engine, click-nav, and real catalog now exist — but most of the
-  store does not. Don't build the remaining wall clips (Crate/right, Vibes/ahead), the
-  id→wall rename, reversed-clip returns (the open return-behavior thread), clerk
-  interactivity, audio pipeline, backend/DB/auth/CMS, or Vercel/deploy config unless the task
-  explicitly asks. Each is its own task.
+- **Don't expand scope.** The engine, click-nav, the fully-filmed rotational store, and the
+  entry sequence now all exist. Don't build the id→wall rename, the counter content surface,
+  the DOM sticker/door-CTA layer, clerk interactivity, audio pipeline, backend/DB/auth/CMS, or
+  Vercel/deploy config unless the task explicitly asks. Each is its own task. (The wall clips
+  and reversed-clip returns are DONE — no longer pending.)
 - **Don't thrash on tooling.** Versions are pinned deliberately; `npm run build` must pass
   clean before you commit. If the build breaks, fix the cause — don't paper over it with
   `// @ts-ignore`, `ignoreDuringBuilds`, or loosened types.

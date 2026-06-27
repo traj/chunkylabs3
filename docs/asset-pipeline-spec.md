@@ -48,17 +48,57 @@ starts at the counter and ends at the wall. The lead-in (street → door → cou
 two push-ins; the three walls hang off the counter. **Four outbound clips total**, one
 inbound-less start (The Street mounts no video):
 
+**STATUS: the store is now FULLY FILMED — every edge below is real footage, plus the
+rotational ring and circular express added 2026-06-25.** The table is kept as the original
+shot list; statuses updated.
+
 | # | Transition | Type | Camera intent | Status |
 |---|---|---|---|---|
-| 1 | street → door | push-in | Forward push toward the storefront, neon, rain on glass | **real (49a43fb)** |
-| 2 | door → counter | push-in | Through the door, swing toward the clerk counter (kept full 8s — background car is part of the beat) | **real (789ef95)** |
-| 3 | counter → **Mixes** (left) | **pivot** | Turn LEFT to the mixes/tapes wall (absorbed the old mixtape-shelf identity) | **real (91b7a1a), 8×→1.0s** |
-| 4 | counter → **Crate** (right) | **pivot** | Turn RIGHT to the crate-dig wall — invent a *distinct* right-side wedge | pending |
-| 5 | counter → **Vibes** (ahead) | push-in | Move AHEAD into the Vibes space — easiest (least invention) | pending |
+| 1 | street → door | **walk-up** | Gentle push-up onto the canonical CENTERED storefront (out0 → out1) | **real (7d42f3b)** — REPLACED the OG storefront push-in (49a43fb, now dead on disk) |
+| 2 | door → counter | push-in | Through the door, swing toward the clerk counter (kept full 8s — background car is part of the beat). The one hard exterior→interior seam. | **real (789ef95)** |
+| 3 | counter → **Mixes** (left) | **pivot** | Turn LEFT to the mixes/tapes wall | **real (91b7a1a), 8×→1.0s** |
+| 4 | counter → **Crate** (right) | **pivot** | Turn RIGHT to the crate-dig wall (distinct right-side wedge) | **real (a704d7e), 1.0s** |
+| 5 | counter → **Vibes** (ahead) | **chained express** | counter↔Vibes circles the ring via a random side wall (the direct push-in is retired) | **real (9ed67a8), 1.0s** |
+| 6 | ring **Mixes ↔ Vibes ↔ Crate** | **pivot** | Wall-to-wall turns completing the rotational ring | **real (a704d7e), 1.0s** |
 
 The walls live on the scaffold station ids `left-bins` (=Mixes), `right-bins` (=Crate),
-`mixtape-shelf` (=Vibes); the id→wall rename is a deferred design thread. An exit is
-wired only once the destination's real clip exists, so unfilmed walls stay unreachable.
+`mixtape-shelf` (=Vibes); the id→wall rename is a deferred design thread. INVARIANT (kept as a
+guard for any future scene): an exit is wired only once the destination's real clip exists — but
+every wall is now filmed, so nothing is currently unreachable for want of a clip.
+
+### Entry-sequence storefront redesign (LOCKED 2026-06-27)
+
+The entry was rebuilt around a NEW canonical CENTERED storefront; the OG asymmetric one is
+RETIRED (dead on disk). Recipe + bankable lessons:
+
+- **Two stills drive it:** `out0` = wide establishing storefront (street rest frame + walk-up
+  start pin + root-splash backdrop), `out1` = close centered storefront (canonical exterior +
+  the DOOR station's held rest frame). The walk-up (Higgsfield Cinema Studio, start=out0,
+  end=out1, **gentle minimum motion**) tweens between them.
+- **Encode = the entry push-in class** (`encode.sh --real`, trim, no speed pass — entry walks
+  stay at original pace, NOT the 1.0s hub-rotation lock). Codecs are the standard
+  `av01.0.08M.08` / `avc1.4D4028`. **TRIM does double duty:** a Cinema Studio push-in overshoots
+  its own end pin, and the end-pin (out1) framing lands BEFORE the clip's last frame — so a
+  MEASURED trim (out1 at t≈4s of the 8s raw) both lands the hold on out1 AND amputates the
+  overshoot in one cut. Measure where the end-pin framing actually lands (frame-diff vs the
+  still), don't eyeball.
+- **`Station.still` (new data primitive):** stations with `transitionIn: null` can now carry a
+  `still` painted full-bleed by StationFrame's no-clip branch (the street's out0 fixes the
+  black opening; the swap into the walk-up is seamless because `still` == the walk-up's
+  frame-0 poster). Reusable for any future no-inbound-clip scene.
+- **Gen lessons (Meshy/Higgsfield):** (1) Meshy's prompt box hard-caps at **800 chars and
+  silently truncates** — load-bearing instructions in the first ~600, decorative detail trails.
+  (2) **Ref-faithfulness cuts both ways:** it FIGHTS "recompose/move the door" (the model
+  protects the ref layout) but works FOR "same facade, pull back / move closer" — lean on the
+  ref to preserve a look at a new distance, drop it when you need a re-layout. (3) The REAL
+  shop frame as the ref is what carried the warm pink-amber soul; text-only / generic neon-noir
+  refs gave rejected stock storefronts. (4) "Center the door" + "faithful single-window shop"
+  are internally contradictory — resolved by adopting the centered face wholesale + retiring OG.
+- **Continuity is WORLD, not GEOMETRY.** The centered storefront is window-on-both-sides and
+  does NOT carry the interior's brick door-flank; the door→counter cut is held together by the
+  "multiple rooms" fiction (record shelves through the door imply a first room, counter deeper
+  in) — same abstraction as the invented ring wedges. door→counter is the load-bearing seam;
+  watch it if door→counter is ever revisited.
 
 ### Two gen recipes — push-in vs pivot (LOCKED 2026-06-23)
 
@@ -231,26 +271,27 @@ shipped — one scoped slot-in prompt each).
   slot-in; no orchestration runner needed for a four-clip project.
 - **ComfyUI in v1 → no.** Transitions-first; ambient/texture is later.
 - **Synthetic clips → KEEP as fixture.** Slot-in does *not* delete `_placeholder/` or
-  `encode.sh` — the synthetic set still backs the unbuilt walls (Crate, Vibes) and is
-  the encoder/regression fixture. Real clips live in their own `public/transitions/<id>/`
-  dirs alongside it.
+  `encode.sh` — every wall is now filmed, so the synthetic set is purely the encoder/regression
+  fixture now. Real clips live in their own `public/transitions/<id>/` dirs alongside it.
 - **Take-count → bounded by review, not credits.** In practice stills took ~3–4 batches
   to land the composition; clips one-or-two takes once the recipe was right.
 
-**Still open:**
+**Resolved since:**
 
-1. **Mobile aspect ratio** — landscape-only + cover-crop / vertical variants /
-   encode-stage crop. (Stage 2.) Still unbuilt; folded into encode hardening (the
-   vertical-crop branch). Highest-impact remaining gen/asset decision.
-2. **Return behavior (NEW — first proposed engine change since the nav pivot).** Returns
-   need no separate clips, but with play-once-hold the engine **re-plays the destination's
-   arrival clip** on return (it does NOT snap-cut to the held frame). Al B wants returns
-   to play the pivot **reversed** (spatially "turning back"). That's an **engine change**
-   (the engine must know "this is a return" and pick a reversed asset variant) *and* an
-   asset implication (encode a reversed variant per pivot). Settle before genning more
-   walls — it sets the pattern for all returns. Options: (a) accept replay-arrival,
-   (b) reversed-clip returns (engine + reversed encode per pivot), (c) instant snap-cut
-   (engine change, but motion-on-return is wanted, so probably not).
+1. **Mobile aspect ratio → RESOLVED 2026-06-27: option 1 (landscape + `object-cover`
+   everywhere), revisit per-screen.** Rather than speculatively double-gen portrait variants,
+   ship landscape with the engine's `object-cover` and build a custom portrait screen ONLY for
+   the ones that "truly suck" once REAL mobile is in hand. The per-screen portrait override stays
+   a known low-risk tool (opt-in viewport branch; engine cost trivial, gen cost is the doubling) —
+   not built speculatively. New exteriors are composed landscape with the door + CTA in the
+   portrait-safe CENTER column so object-cover reads as well as it can for free.
+2. **Return behavior → RESOLVED (2026-06-24/25): option (b), pre-encoded reversed clips.**
+   Returns play a PRE-ENCODED reversed variant of the forward (the "reverse" lives in the file
+   bytes, played plain-forward — no negative playbackRate, play-once-hold intact). Keyed by
+   directed edge in `REVERSE_EDGES`; `encode.sh --reverse` derives each from its forward master.
+   EXCEPTIONS where reverse is wrong: door→street (a reversed street→door runs the rain UPWARD)
+   and counter→street (2026-06-27) both use a ~450ms opacity crossfade to the video-less street
+   instead (`CROSSFADE_EDGES`); the old reversed door→counter is retired/dead on disk.
 
 ---
 
@@ -265,16 +306,21 @@ shipped — one scoped slot-in prompt each).
 
 ## Next concrete step
 
-The pipeline is proven end-to-end (three real clips). Remaining order:
+The store is **fully filmed** (entry, four walls, rotational ring, circular express) and the
+**entry redesign is shipped** (7d42f3b). The asset spine is DONE; remaining work is polish +
+cutover, not transitions:
 
-1. **Settle the return-behavior decision** (Decision 2, above) — it's an engine change
-   that sets the pattern for ALL returns and decides whether each pivot needs a reversed
-   encode, so it's cheaper to lock once than retrofit.
-2. **Crate wall (RIGHT)** on the locked pivot recipe: counter-endframe → Crate-wall Meshy
-   still → Cinema Studio (RIGHT turn, a *distinct* right-side wedge) → 2× speed → encode →
-   slot-in + un-gate counter→Crate.
-3. **Vibes wall (AHEAD)** — a push-in (not a pivot), the easiest of the three: Veo +
-   prompted forward push → encode → slot-in.
+1. **DOM door layer (no gen, no engine risk):** an entry-CTA affordance over out1's door
+   region (hover-glow desktop / subtle cue mobile) + brand stickers + cover the AI-gibberish
+   posters on the held door frame. Absolutely-positioned DOM over the held frame, same
+   machinery as the edge CTAs.
+2. **Counter content surface:** productions, 2 Beatport buy CTAs, re-homed UPDATES corkboard,
+   net-new contact card; the clerk negative-space slot is already composed into the counter
+   still.
+3. **Dead-on-disk cleanup (whenever):** OG `/transitions/door/door.*`,
+   `REVERSE_EDGES["counter->door"]` + `counter-door.*`.
+4. **Cutover groundwork:** `git push` the ahead stack (origin/main is healthy), then Vercel
+   project + domain.
 
 Two walls to a fully navigable store. Still outstanding regardless: the **on-device
 gauntlet** (Stage 3.2 — hardware-blocked on a non-AV1 iPhone + LPM) and **encode
