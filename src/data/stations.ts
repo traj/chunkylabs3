@@ -104,6 +104,15 @@ export interface Station {
    * `null` for the first station (you start there — nothing plays you in).
    */
   transitionIn: TransitionAsset | null;
+  /**
+   * Optional static still painted full-bleed as the scene background when this station has NO
+   * inbound transition clip (`transitionIn: null`). The first station (street) has nothing to
+   * play it in, so without this it renders the empty placeholder over black; pointing this at
+   * the storefront still makes the opening show the store. Point it at the SAME file as the
+   * outbound clip's poster (frame 0) so the swap into that clip is seamless. Ignored when
+   * `transitionIn` is set (the video's own frames are the scene).
+   */
+  still?: string;
   /** DOM layer composited over the scene. */
   dom: StationDomLayer;
   /**
@@ -131,6 +140,11 @@ export const STATIONS: readonly Station[] = [
     description:
       "Exterior. Neon in the window, rain on the glass. You're standing outside chunkylabs.",
     transitionIn: null,
+    // Entry storefront still (out0 = the street→door walk-up's FIRST frame, i.e. its poster).
+    // Painted as the street's background so the opening shows the wide storefront, NOT black
+    // (street is the only station with no inbound clip). Same file as the walk-up poster, so
+    // clicking "Come in →" plays the walk-up seamlessly from this exact frame.
+    still: "/transitions/street-door/street-door.poster.jpg",
     dom: {
       heading: "chunkylabs",
       body: "A record store that only exists here.",
@@ -145,11 +159,16 @@ export const STATIONS: readonly Station[] = [
     slug: "door",
     description: "Push-in through the front door. The bell rings.",
     transitionIn: {
-      // Real encode (street → door). AV1 av01.0.08M.08 + H.264 avc1.4D4028 — codec strings
-      // parsed from the actual av1C/avcC boxes; they match the engine's <source> types.
-      av1Src: "/transitions/door/door.av1.mp4",
-      h264Src: "/transitions/door/door.h264.mp4",
-      poster: "/transitions/door/door.poster.jpg",
+      // Real encode — the street → door WALK-UP (new centered storefront: out0 → out1, a gentle
+      // push-in trimmed to 4s at original walking pace). REPLACES the retired OG storefront
+      // push-in (/transitions/door/door.* — now DEAD on disk, cleanup later). Lands HELD on out1
+      // (the close centered storefront — door centered + prominent; the clip's own last frame, a
+      // touch past out1's exact framing but no overshoot). Poster = frame 0 = out0 = the street's
+      // `still`, for a seamless pre-roll. AV1 av01.0.08M.08 + H.264 avc1.4D4028 (verified against
+      // the OG clip — identical encode params; match the engine's <source> types).
+      av1Src: "/transitions/street-door/street-door.av1.mp4",
+      h264Src: "/transitions/street-door/street-door.h264.mp4",
+      poster: "/transitions/street-door/street-door.poster.jpg",
       durationSec: 4,
     },
     dom: {

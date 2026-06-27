@@ -100,6 +100,16 @@ export function StationFrame({
           index={index}
           activeIndex={activeIndex}
         />
+      ) : station.still ? (
+        // No inbound clip, but the station provides a static still (the street/entry storefront)
+        // — paint it full-bleed as the scene background instead of the black placeholder. Same
+        // object-cover framing as the <video>, so landscape + mobile match the clip stations.
+        <div
+          data-transition-layer
+          aria-hidden
+          className="pointer-events-none absolute inset-0 bg-cover bg-center"
+          style={{ backgroundImage: `url(${station.still})` }}
+        />
       ) : (
         <div
           data-transition-layer
