@@ -208,12 +208,27 @@ export type DoorLayerElement = {
 /** Which station's framing a mark is being placed on. */
 export type ElementPlacementSet = "door" | "street";
 
+/** Intrinsic size of the master frame every clip and still is authored at. */
+export const MASTER_WIDTH = 1920;
+export const MASTER_HEIGHT = 1080;
+
 /**
- * Portrait kicks in when the viewport is TALLER than the 1920x1080 master (aspect < 16/9):
- * object-cover then crops the frame's sides and only a centre column survives, so the
- * wordmark (x 1249..1548) would be cut off entirely. Matches the .pen `portrait-safezone-guide`.
+ * The portrait rule: GENUINELY portrait only — taller than it is wide.
+ *
+ * It used to be `aspect < 16/9`, which was WRONG and shipped a visible bug: a 1161x1015 desktop
+ * window (aspect 1.14) is landscape, but 1.14 < 1.78, so the wordmark relocated to the portrait
+ * position — centred over the neon — while its BAKED TWIN stayed in the right window. Two
+ * wordmarks on screen at once.
+ *
+ * The relocation exists for ONE reason: at a phone's aspect, object-cover crops the frame's
+ * sides so hard that the wordmark (x 1249..1548 of 1920) falls outside the surviving centre
+ * column entirely. That is a portrait problem. Every landscape window — however square — still
+ * shows the wordmark's native spot, so it must keep its native geometry and stay welded to its
+ * twin. There is NO intermediate zone: portrait, or door-native.
  */
-export const MASTER_ASPECT = 1920 / 1080;
+export function isPortrait(width: number, height: number): boolean {
+  return height > width;
+}
 
 /** Resolve a mark's placement for a station framing + orientation. */
 export function placementFor(

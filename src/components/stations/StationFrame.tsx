@@ -92,14 +92,27 @@ export function StationFrame({
   const { markUnlocked } = usePlaybackUnlock();
 
   // Element-overlay wiring (entry stations only). `phase` watches THIS station's <video> from
-  // the outside — the engine owns playback and stays untouched (see useTransitionPhase).
+  // the outside — the engine owns playback and stays untouched (see useTransitionPhase). It is
+  // told about activation so a stale `ended` from a PREVIOUS visit can't paint the crisp marks
+  // over a re-armed, moving clip (the re-entry bug — see the hook).
   const sectionRef = useRef<HTMLElement>(null);
-  const phase = useTransitionPhase(sectionRef);
+  const phase = useTransitionPhase(sectionRef, {
+    isActive,
+    hasClip: hasTransition,
+  });
 
   const isStreet = station.id === STREET_ID;
   const isDoor = station.id === DOOR_ID;
-  // Is the clip playing into the door the street→door walk-up (vs the counter→door reverse)?
+  // Is the clip playing into the door the street→door walk-up (vs an interior reverse)?
   const isWalkUpEdge = Boolean(asset?.h264Src?.startsWith(WALKUP_CLIP));
+
+  // THE HOLD — when the crisp marks may land. Two ways to be at rest:
+  //   `ended` — a clip played through once and now holds its final frame.
+  //   `none`  — the edge has NO clip, so the scene is already still on arrival. This is how the
+  //             street is always reached (door→street and counter→street are clip-less
+  //             crossfades); waiting for an `ended` there would wait forever.
+  // Gated on isActive so a neighbour mounted mid-hold never shows its overlay through a swap.
+  const atRest = isActive && (phase === "ended" || phase === "none");
 
   // The OPEN sign is a diegetic CTA: it fires the door's own forward exit rather than a
   // hard-coded target, so it can never desync from the button it doubles (stations.ts is the
@@ -114,7 +127,9 @@ export function StationFrame({
   // Without this the swap would pop crisp→soft, and the 150ms fade would be invisible: the
   // street's own section snaps to opacity 0 (street→door is not a crossfade edge), taking its
   // overlay with it before any fade could play.
-  const showStreetSetOnDoor = isDoor && isWalkUpEdge && phase !== "playing" && phase !== "ended";
+  // `idle` = parked on frame 0: preloading as a neighbour, or freshly re-armed. Explicitly NOT
+  // `playing` (the facade is moving) and NOT `ended` (the door set owns the hold).
+  const showStreetSetOnDoor = isDoor && isWalkUpEdge && phase === "idle";
 
   // Visibility/stacking. `transition-opacity` is ALWAYS present so the crossfade animates
   // reliably (the property pre-exists; only the duration changes). Normal swaps use
@@ -174,8 +189,10 @@ export function StationFrame({
           Entry stations only; it sits UNDER the scrim and the DOM layer, because these marks
           are part of the scene (paint on the glass), not part of the UI. */}
       {isStreet ? (
-        // The street rests on its still — the marks are simply there, crisp, at rest.
-        <StationElementLayer set="street" visible={isActive} fadeMs={FADE_OUT_MS} />
+        // The street rests on its still and is always arrived at clip-less (phase `none`), so it
+        // is at rest the moment it's active — but it goes through the SAME atRest gate as the
+        // door rather than a bare isActive, so the two stations can't drift apart in behaviour.
+        <StationElementLayer set="street" visible={atRest} fadeMs={FADE_OUT_MS} />
       ) : null}
 
       {isDoor ? (
@@ -186,12 +203,13 @@ export function StationFrame({
             visible={showStreetSetOnDoor}
             fadeMs={FADE_OUT_MS}
           />
-          {/* THE HOLD: the clip has ended and the facade is still — land the crisp marks on
-              top of their soft baked twins. Both inbound edges (the walk-up and the counter→
-              door reverse) end on the SAME held frame, so one placement set serves both. */}
+          {/* THE HOLD: the clip has played through and the facade is STILL — only now may the
+              crisp marks land on top of their soft baked twins. Strictly `atRest`: never while
+              `playing` (they'd smear over a moving facade) and never on a stale `ended` carried
+              over from a previous visit (the re-entry bug — the hook voids it on activation). */}
           <StationElementLayer
             set="door"
-            visible={phase === "ended"}
+            visible={atRest}
             fadeMs={FADE_IN_MS}
             onSignClick={
               signExit
