@@ -6,12 +6,161 @@
       "id": "bi8Au",
       "x": 0,
       "y": 0,
-      "name": "Frame",
+      "name": "door-station",
       "clip": true,
-      "width": 800,
-      "height": 600,
-      "fill": "#FFFFFF",
-      "layout": "none"
+      "width": 1920,
+      "height": 1080,
+      "fill": {
+        "type": "image",
+        "enabled": true,
+        "url": "frames/door-held-frame.png",
+        "mode": "fill"
+      },
+      "layout": "none",
+      "children": [
+        {
+          "type": "rectangle",
+          "id": "DUc4P",
+          "x": 899,
+          "y": 295.62733663469453,
+          "name": "flyer-right",
+          "opacity": 0.96,
+          "rotation": 4,
+          "fill": {
+            "type": "image",
+            "enabled": true,
+            "url": "assets/flyer-grimy-cut.png",
+            "mode": "fill"
+          },
+          "width": 52,
+          "height": 40,
+          "effect": {
+            "type": "shadow",
+            "shadowType": "outer",
+            "color": "#00000066",
+            "offset": {
+              "x": 2,
+              "y": 3
+            },
+            "blur": 6
+          }
+        },
+        {
+          "type": "rectangle",
+          "id": "O7vwR",
+          "x": 470.3551180309325,
+          "y": 516,
+          "name": "flyer-left",
+          "opacity": 0.78,
+          "rotation": -3.0000000000000004,
+          "fill": {
+            "type": "image",
+            "enabled": true,
+            "url": "assets/flyer-curl-cut.png",
+            "mode": "fill"
+          },
+          "width": 59,
+          "height": 45,
+          "effect": {
+            "type": "shadow",
+            "shadowType": "outer",
+            "color": "#00000066",
+            "offset": {
+              "x": 2,
+              "y": 3
+            },
+            "blur": 6
+          }
+        },
+        {
+          "type": "rectangle",
+          "id": "yptto",
+          "x": 656.25,
+          "y": 0,
+          "name": "portrait-safezone-guide",
+          "enabled": false,
+          "width": 607.5,
+          "height": 1080,
+          "stroke": "#22D3EE",
+          "strokeWidth": 3
+        },
+        {
+          "type": "note",
+          "id": "Ehh0o",
+          "x": 64,
+          "y": 1030,
+          "name": "note-portrait-safezone",
+          "width": 360,
+          "height": 0,
+          "content": "portrait safe-zone · 9:16 object-cover center column"
+        },
+        {
+          "type": "note",
+          "id": "cQIQp",
+          "x": 420,
+          "y": 1043,
+          "name": "note-open-hover",
+          "width": 360,
+          "height": 0,
+          "content": "entry CTA — hover: glow intensifies"
+        },
+        {
+          "type": "note",
+          "id": "a2oEPl",
+          "x": 1491,
+          "y": 1038,
+          "name": "note-wordmark-portrait",
+          "width": 360,
+          "height": 0,
+          "content": "wordmark — portrait: relocates to center column above door"
+        },
+        {
+          "type": "rectangle",
+          "id": "Ve5Sr",
+          "x": 969,
+          "y": 687,
+          "opacity": 0.83,
+          "fill": {
+            "type": "image",
+            "enabled": true,
+            "url": "shade-sticker-trans.png",
+            "mode": "fill"
+          },
+          "width": 90,
+          "height": 50
+        },
+        {
+          "type": "rectangle",
+          "id": "d3oPkd",
+          "x": 1249,
+          "y": 139,
+          "opacity": 0.85,
+          "fill": {
+            "type": "image",
+            "enabled": true,
+            "url": "chunky-sticker-removebg-preview.png",
+            "mode": "fill"
+          },
+          "width": 299,
+          "height": 166
+        },
+        {
+          "type": "rectangle",
+          "id": "NQZHy",
+          "x": 947.0434442428575,
+          "y": 348.4331327257644,
+          "opacity": 0.82,
+          "rotation": -1,
+          "fill": {
+            "type": "image",
+            "enabled": true,
+            "url": "ss2-removebg-preview.png",
+            "mode": "fill"
+          },
+          "width": 66,
+          "height": 119
+        }
+      ]
     }
   ],
   "fileToken": "d366873a-c3e6-4897-8866-5c2a84d88082"
