@@ -67,19 +67,19 @@ y0 = −0.000993·x1 + 0.613564·y1 + 157.505
 
 The whole out1 crop lands in out0 as the centered rectangle [366,158]–[1545,818].
 
-**At street scale, keep the two legible marks, drop the rest** (would-be sizes = `.pen`
-size × 0.61356):
+**All five elements are pinned on BOTH stills** (pin-matching rule). An element present
+on the end pin (out1) but absent on the start pin (out0) would *materialize mid-tween* —
+so every mark is composited on out0 too, at its transformed street-scale size (= `.pen`
+size × 0.61356; flyer shadows scale with it). The small sizes at street distance are
+expected and correct — consistency across the two pins beats per-mark legibility.
 
-| layer | out1 size | out0 (street) size | verdict |
-|-------|-----------|--------------------|---------|
-| window-wordmark | 299×166 | **183.5×101.9** | KEEP — reads |
-| OPEN sign | 66×119 | **40.5×73.0** | KEEP — reads |
-| shade-sticker | 90×50 | 55.2×30.7 | DROP — sub-legible |
-| flyer-right | 52×40 | 31.9×24.5 | DROP — sub-legible |
-| flyer-left | 59×45 | 36.2×27.6 | DROP — sub-legible |
-
-The three dropped marks fall to ≤55 px on their long edge at street distance (flyers
-≤36 px) — below legibility, so they'd read as noise on the pulled-back frame.
+| layer | out1 size | out0 (street) size |
+|-------|-----------|--------------------|
+| window-wordmark | 299×166 | 183.5×101.9 |
+| OPEN sign | 66×119 | 40.5×73.0 |
+| shade-sticker | 90×50 | 55.2×30.7 |
+| flyer-right | 52×40 | 31.9×24.5 |
+| flyer-left | 59×45 | 36.2×27.6 |
 
 ---
 
@@ -104,7 +104,7 @@ Roll a few takes; pick on the **frame-sweep gate** below before encoding.
 ### Frame-sweep gate (letterform check)
 
 Scrub the raw take across **mid-motion** (the middle of the push-in, where the wordmark
-and OPEN sign are smallest-but-moving) and read the two kept marks:
+and OPEN sign are smallest-but-moving) and read the two letterform marks:
 
 - **soft** (letterforms slightly blurred by motion but still the right shapes) → **PASS**.
 - **melt** (Inception-style geometry liquefy — CHUNKYLABS/OPEN letters warp, smear, or

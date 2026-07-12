@@ -100,23 +100,28 @@ def build_out1():
     base.convert("RGB").save(out)
     print("wrote", out, base.size)
 
-# --- TASK 2: out0-composited (wordmark + OPEN sign only, transformed) ---------
-STREET_KEEP = {"d3oPkd", "NQZHy"}   # wordmark + OPEN sign
+# --- TASK 2: out0-composited (ALL five elements, transformed) -----------------
+# Pin-matching rule (Al B, reversing the earlier drop): every element on the end
+# pin (out1) must also be on the start pin (out0), or it would materialize mid-tween.
+# The small street-scale sizes (shade ~55px, flyers ~30-36px) are expected and kept.
+def scale_shadow(sh):
+    if sh is None:
+        return None
+    s = dict(sh)
+    s["dx"], s["dy"], s["blur"] = sh["dx"] * S, sh["dy"] * S, sh["blur"] * S
+    return s
+
 def build_out0():
     base = Image.open(OUT0_STILL).convert("RGBA")
     assert base.size == (1920, 1080), base.size
-    print("street-scale would-be sizes (evidence for keep/drop):")
+    print("street-scale element sizes (all pinned per pin-matching rule):")
     for _id, name, asset, x, y, w, h, rot, op, sh in ELEMENTS:
-        w0, h0 = w * S, h * S
-        keep = _id in STREET_KEEP
-        print(f"  {'KEEP' if keep else 'DROP'} {name:<15} {w}x{h} -> {w0:5.1f}x{h0:5.1f}")
+        print(f"  {name:<15} {w}x{h} -> {w * S:5.1f}x{h * S:5.1f}")
     for _id, _name, asset, x, y, w, h, rot, op, sh in ELEMENTS:
-        if _id not in STREET_KEEP:
-            continue
         x0, y0 = to_out0(x, y)
         w0, h0 = max(1, round(w * S)), max(1, round(h * S))
         rot0 = rot + ROT                       # element roll carries the scene roll (~0.09 deg)
-        place_image(base, os.path.join(DESIGN, asset), x0, y0, w0, h0, rot0, op, None)
+        place_image(base, os.path.join(DESIGN, asset), x0, y0, w0, h0, rot0, op, scale_shadow(sh))
     out = os.path.join(OUT, "out0-composited.png")
     base.convert("RGB").save(out)
     print("wrote", out, base.size)
