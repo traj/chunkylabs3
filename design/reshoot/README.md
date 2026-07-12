@@ -7,13 +7,60 @@ stickers already on the glass (no runtime DOM layer needed for the reshoot pass)
 - `out0-composited.png` — **start pin** (WIDE street rest frame + walk-up first frame).
 - `out1-composited.png` — **end pin** (CLOSE canonical storefront + DOOR held rest frame).
 
-Both are 1920×1080. Regenerate with `python3 design/reshoot/compose_reshoot.py`.
+Both are 1920×1080. Regenerate with `python3 design/reshoot/compose_reshoot.py`
+(needs Pillow + numpy). The recipe below is **unchanged** — only the pins were rebuilt.
 
 **Source of truth = `design/door-layer.pen`** (frame `bi8Au` = door-station). Element
 geometry is transcribed 1:1 from that frame — nothing is eyeballed. The compositor
 reuses the review-render workflow (`design/review/compose_review.py`): Pencil anchors
 the pre-rotation bounding-box **top-left corner** at `(x, y)` and rotates **CCW about
 that corner**; per-layer opacity and the outer drop shadow are reproduced identically.
+
+---
+
+## Roll 1 rejected → photometric harmonization
+
+**Roll 1 of the walk-up reshoot was REJECTED at the frame-sweep gate:** the take
+warped / re-rendered instead of tweening and never converged on the end pin
+(final-frame mean abs diff ≈30 vs `out1-composited`). **Diagnosis:** the pins were
+internally inconsistent — crisp, brightly/neutrally-graded PNG elements pasted onto
+soft, dim, warm-graded video frames. Cinema Studio reads that seam as error and
+"fixes" it by warping the letterforms.
+
+**Fix:** seat every element in each frame's lens *before* pinning. Both pins are now
+rebuilt through a harmonization pass in `compose_reshoot.py`, applied to each element
+**after** its geometric transform and **before** paste. Every value is **measured**
+from the base frame around/under the element's destination — nothing is hardcoded:
+
+1. **Softness** — blur to the frame's measured edge sigma under the footprint (re-blur
+   / grad² estimator, calibrated against synthetic edges). The heavily-downscaled
+   cutouts already sit near the frame's edge softness, so the measured deficits are
+   small (0.00–0.51 px) — a real sticker at this distance carries this same edge width;
+   the deficit is applied, never sharpened.
+2. **Grade** — exposure (levels) + white balance pulled toward the local frame, hue
+   preserved (WB gain forced luma-neutral) and capped so it can't go muddy. **This is
+   the main seating win:** the bright PNGs (luma ~135–220) dim ×0.65–0.95 into the dim
+   scene (frame luma ~64–125) and pick up its warm cast — the wordmark stays brand
+   pink, just pink-as-this-frame-photographs-it.
+3. **Grain** — monochromatic noise at the frame's measured noise floor, masked to the
+   element's alpha, so no element is unnaturally clean.
+
+**Photometric parity (out1 pin, measured before → after vs local frame):**
+
+| element | softness blur | edge σ frame-under / elem | exposure × (frame L / elem L) | grain σ (frame floor) |
+|---------|--------------:|---------------------------|-------------------------------|-----------------------|
+| window-wordmark | 0.00 px | 0.44 / 0.52 | ×0.831 (94 / 135) | 0.50 (0.36) |
+| open-sign | 0.00 px | 0.35 / 0.62 | ×0.819 (124 / 185) | 0.83 (0.83) |
+| shade-sticker | 0.00 px | 0.55 / 0.64 | ×0.954 (69 / 75) | 0.50 (0.31) |
+| flyer-left | 0.51 px | 0.74 / 0.54 | ×0.650 (64 / 217) | 0.50 (0.36) |
+| flyer-right | 0.10 px | 0.50 / 0.49 | ×0.700 (99 / 219) | 0.85 (0.85) |
+
+Full per-element numbers for both pins print when the script runs.
+`harmonization-check.png` is a 2×-zoom before/after of the wordmark and OPEN sign —
+after harmonization they dim/warm/grain into the glass instead of popping as decals.
+**Geometry is unchanged** by the pass (it only recolours/softens pixels, never moves
+them): out1 element AABBs still match Pencil `snapshot_layout` to 0.000 px (same check
+as a73baa0).
 
 ---
 
@@ -111,6 +158,10 @@ and OPEN sign are smallest-but-moving) and read the two letterform marks:
   invent strokes) → **REJECT** that take, roll another.
 - **2 rejects** on a start/end pair → **fall back to the DOM fade-at-hold** (skip the
   gen; hold out0, cross-fade the composited stickers up as the room settles on out1).
+
+> **This harmonized rebuild is the LAST reroll.** Roll 1 already spent one reject
+> (warp/non-convergence → the harmonization fix above). Per the standing gate, a second
+> reject falls back to the DOM fade-at-hold — do not keep re-rolling past it.
 
 ### Post-pick encode (deterministic — no re-gen)
 
