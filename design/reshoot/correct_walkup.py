@@ -81,6 +81,22 @@ IDX = [round(j * 192 / (N_FRAMES - 1)) for j in range(N_FRAMES)]
 # fit can never blow a frame out; the largest gain actually applied is reported.
 NUDGE_CAP = 0.06
 
+# LOW-FREQUENCY SPATIAL MATCH. The global colour loop (grade + nudge + PAINT_CORR) drives the
+# frame's MEAN onto the still, and it is now converged to <0.1 luma. But the residual it cannot
+# touch is not global: measured on a 4x3 grid at the held frame, regions swing from +0.98 to -3.27
+# in G while the global mean sits at ~0. That is the gen REPAINTING surfaces slightly differently
+# (the door-frame wood being the one the eye keeps catching) — and no single gain or offset can fix
+# it, because pulling the wood down would push every already-low region further off.
+#
+# So we match the LOW FREQUENCIES only: a per-channel gain field = blur(still)/blur(video) at a
+# large sigma, so it carries tone/tint but not texture. It is deliberately blind to detail — it must
+# not try to reconstruct the gen's missing structure, only to sit its colour on the still's. The
+# field is exact at both endpoints (which is all the dissolves ever blend against) and ramped
+# between them; mid-walk the facade is moving and its absolute tone is unobservable.
+SPATIAL_SIGMA = 40.0    # px — smooth enough to carry only tone, tight enough to reach the
+                        # door-frame wood (~70px), which sigma 80 was too coarse to touch.
+SPATIAL_CLIP = 0.07     # +/- gain cap, so the field can never bloom or crush
+
 # ---- fitted constants (re-derive with --fit) --------------------------------------------------
 # Full affine VIDEO -> STILL at each endpoint (2x3), and the per-channel linear grade still = a*v+b.
 M_START = np.array([[1.006308432, 0.000141215, -5.63571925],
@@ -101,6 +117,38 @@ GRADE_END = [(1.000116, -1.3929), (0.947881, -0.3742), (0.943304, -0.9992)]
 # residual is then closed against CDP-PAINTED values on BOTH codec paths.
 ENC_COMP_START = (-0.820, -0.605, -1.480)
 ENC_COMP_END = (-0.435, -0.435, -1.065)
+
+# CLOSED-LOOP PAINTED RESIDUAL, per frame, per channel — the last feed-forward error, removed.
+#
+# Everything above (affine, grade, nudge, ENC_COMP) is a PREDICTION of what the pixels will be once
+# they have been through warp -> grade -> RGB->YUV(bt709) -> encode -> decode -> composite. The
+# prediction is good but not exact, and what was left over was systematic, not noise: the painted
+# clip drifted steadily ABOVE the still-anchored ramp toward the tail (+0.35 luma by frame 16).
+# So the loop is closed against the only thing that matters — the CDP-PAINTED frames, averaged over
+# the AV1 and H.264 paths (they disagree slightly and neither is privileged).
+#
+# Derived by: encode -> paint every frame in the browser -> measure -> subtract. Re-derive by
+# re-running the paint scan and setting this to the negated residual.
+PAINT_CORR = (
+    (-0.813, -0.688, -1.367),
+    (-0.842, -0.689, -1.507),
+    (-0.651, -0.601, -1.294),
+    (-0.723, -0.598, -1.363),
+    (-0.652, -0.593, -1.194),
+    (-0.847, -0.647, -1.359),
+    (-0.844, -0.634, -1.315),
+    (-0.973, -0.694, -1.500),
+    (-0.770, -0.593, -1.298),
+    (-0.830, -0.527, -1.347),
+    (-0.865, -0.567, -1.361),
+    (-0.915, -0.581, -1.432),
+    (-0.798, -0.550, -1.326),
+    (-1.025, -0.615, -1.429),
+    (-0.951, -0.647, -1.327),
+    (-0.950, -0.707, -1.351),
+    (-0.916, -0.729, -1.384),
+    (-0.513, -0.527, -1.133),
+)
 
 
 # ---- affine decompose / recompose (so we can interpolate in a meaningful basis) ---------------
@@ -177,6 +225,14 @@ def extract(raw, workdir):
     return [os.path.join(workdir, f) for f in fs]
 
 
+def spatial_field(video_corrected, still):
+    """Per-channel low-frequency gain field mapping the corrected video's tone onto the still's."""
+    v = cv2.GaussianBlur(video_corrected.astype(np.float32), (0, 0), SPATIAL_SIGMA)
+    s = cv2.GaussianBlur(still.astype(np.float32), (0, 0), SPATIAL_SIGMA)
+    f = s / np.maximum(v, 1.0)
+    return np.clip(f, 1 - SPATIAL_CLIP, 1 + SPATIAL_CLIP).astype(np.float64)
+
+
 def correct_frame(img, M, grade):
     w = cv2.warpAffine(img.astype(np.float32), M, (1920, 1080),
                        flags=cv2.INTER_LANCZOS4, borderMode=cv2.BORDER_REPLICATE)
@@ -210,12 +266,20 @@ def main():
               f"shear {p['shear']:+.5f}  t ({p['tx']:+.2f},{p['ty']:+.2f})")
 
     n = len(frames)
+    # The two endpoint spatial fields. Each is measured on the frame AFTER affine+grade, so it only
+    # ever carries what the global correction could not.
+    f0 = spatial_field(correct_frame(load(frames[0]), lerp_affine(M_START, M_END, 0.0), lerp_grade(0.0)), out0)
+    f1 = spatial_field(correct_frame(load(frames[-1]), lerp_affine(M_START, M_END, 1.0), lerp_grade(1.0)), out1)
+    print(f"  spatial field: sigma {SPATIAL_SIGMA:.0f}px  gain range "
+          f"[{min(f0.min(), f1.min()):.3f}, {max(f0.max(), f1.max()):.3f}]  (cap ±{SPATIAL_CLIP:.2f})")
+
     # PASS 1 — affine + grade only, keeping just the per-channel means. (Two passes so we never
     # hold 18 full float frames in memory.)
     means = np.zeros((n, 3))
     for j, f in enumerate(frames):
         t = j / (n - 1)
         img = correct_frame(load(f), lerp_affine(M_START, M_END, t), lerp_grade(t))
+        img = np.clip(img * (f0 + (f1 - f0) * t), 0, 255)
         means[j] = img.reshape(-1, 3).mean(0)
 
     # The endpoint-to-endpoint ramp: the straight line the interior should ride. The endpoints are
@@ -233,9 +297,11 @@ def main():
     for j, f in enumerate(frames):
         t = j / (n - 1)
         img = correct_frame(load(f), lerp_affine(M_START, M_END, t), lerp_grade(t))
+        img = np.clip(img * (f0 + (f1 - f0) * t), 0, 255)
         g = np.clip(ramp[j] / np.maximum(means[j], 1e-6), 1 - NUDGE_CAP, 1 + NUDGE_CAP)
         gains[j] = g
-        img = np.clip(img * g, 0, 255)
+        img = img * g
+        img = np.clip(img + np.asarray(PAINT_CORR[j]), 0, 255)
         # ROUND, never truncate. `astype(uint8)` floors, which costs a systematic ~0.5 level per
         # channel — enough on its own to fail the <0.5 grade gate the dissolves are judged by.
         Image.fromarray(np.rint(img).astype(np.uint8)).save(os.path.join(outdir, f"c_{j:02d}.png"))

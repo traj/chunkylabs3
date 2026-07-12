@@ -396,6 +396,29 @@ SHIP = {
     "out1-composited.png": "entry-door.jpg",    # door rest    (close storefront, held frame)
 }
 
+# BOUNDARY TRIM — deliberately ZERO. Kept as a documented dead end.
+#
+# The two <source> paths do not paint the held frame identically (AV1 crf 38 vs H.264 crf 23 land
+# ~0.22 luma apart on screen), so no single clip can sit exactly on the still for BOTH at once —
+# the best anything can do is split that spread evenly, ±0.11 each. The obvious lever is to move
+# the STILL to the midpoint of the two painted video endpoints.
+#
+# IT DOES NOT WORK, and the reason is quantisation. The still is loaded from an 8-bit PNG, so every
+# pixel is already an INTEGER; adding a sub-half-level constant (+0.11) and rounding back to uint8
+# is a no-op for essentially every pixel, and the shift vanishes. Measured: applying it moved the
+# painted still by 0.00. Carrying it would require DITHERING — i.e. injecting noise into the crisp
+# rest frame the visitor actually dwells on, to buy a 0.08-luma shift that is ~10x below JND.
+#
+# The CLIP is the right lever instead, and it is free: its frames are float all the way through the
+# warp + grade, so a sub-level offset genuinely moves the mean (it flips a proportional fraction of
+# pixels across the rounding boundary). Centring the clip's painted output on the still is
+# mathematically the same even split — without touching the master-derived still. See PAINT_CORR in
+# design/reshoot/correct_walkup.py.
+STILL_TRIM = {
+    "entry-street.jpg": (0.0, 0.0, 0.0),
+    "entry-door.jpg": (0.0, 0.0, 0.0),
+}
+
 
 def export_shipped():
     dest_dir = os.path.join(REPO, "public", "stills")
@@ -406,6 +429,10 @@ def export_shipped():
         dst = os.path.join(dest_dir, out_name)
         im = Image.open(src).convert("RGB")
         assert im.size == (1920, 1080), im.size
+        trim = STILL_TRIM.get(out_name, (0.0, 0.0, 0.0))
+        if any(trim):
+            a = np.asarray(im, dtype=np.float64) + np.asarray(trim)
+            im = Image.fromarray(np.rint(np.clip(a, 0, 255)).astype(np.uint8))
         im.save(dst, "JPEG", quality=94, subsampling=0, optimize=True, progressive=True)
         print(f"  {src_name} -> public/stills/{out_name}  "
               f"({os.path.getsize(src)/1e6:.2f}MB PNG -> {os.path.getsize(dst)/1e3:.0f}KB JPEG)")
