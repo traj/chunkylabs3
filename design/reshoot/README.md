@@ -181,3 +181,54 @@ TRIM=4 bash public/transitions/_placeholder/encode.sh --real <winner-take.mp4> s
 - Output overwrites `public/transitions/street-door/{av1,h264}.mp4` + `.poster.jpg`.
   Entry pace is **not** sped — no speed flag, no `TRIM` override.
 ```
+
+---
+
+## Boundary correction — the grade pulse and the stretch pulse (deterministic, at encode)
+
+The still-rest model dissolves still↔video at each end of the walk-up. Two *systematic* gen
+behaviours showed up **as pulses across those dissolves**, because a dissolve makes any constant
+delta between its two sides read as a brightness/size ramp:
+
+- **Grade pulse** — the gen's render is LIGHTER and cooler than the composited pins.
+- **Stretch pulse** — the gen renders very slightly ZOOMED OUT vs the pins.
+
+Both are constant per-frame offsets, so both are fixable **deterministically at encode from the
+raw** — no reroll, no re-gen. Measured on the bit-exact endpoint anchors (raw frames 0 and 192):
+
+| | video→still scale | grade (still = a·video + b) |
+|---|---|---|
+| START (f0 vs out0) | 1.00936 | R 0.9579·v−0.56 · G 0.8609·v+2.82 · B 0.8571·v+1.12 |
+| END (f192 vs out1) | 1.00551 | R 0.9536·v+2.72 · G 0.8688·v+4.41 · B 0.8627·v+3.41 |
+
+The frame centre maps to (960,540) at both ends (±1.3px), so the geometry is a **pure centred
+zoom** — no translation, correctable by one constant. The luma percentile map is straight (max
+deviation 2.7 levels), so a **per-channel linear** fit is enough; no curve is needed.
+
+Applied: **scale k = 1.00744** (the mean — symmetric ±0.19% residual = 1.8px at the frame edge;
+END-only would leave 3.7px at the start) and the **END grade fit** (the held boundary is the one
+the eye dwells on; the start is left ~2–3 levels bright, which is below JND).
+
+```
+ffmpeg -i <roll-2 raw> -vf "\
+select='eq(n,0)+eq(n,5)+...+eq(n,192)',setpts=N/24/TB,\
+format=gbrp,scale=1934:1088:flags=lanczos,crop=1920:1080,\
+lutrgb=r='clip(0.9536*val+2.717,0,255)':g='clip(0.8688*val+4.407,0,255)':b='clip(0.8627*val+3.413,0,255)',\
+format=yuv420p" -r 24 -fps_mode cfr -c:v libx264 -qp 0 -an corrected-1.5s.mp4
+TRIM=1.5 bash public/transitions/_placeholder/encode.sh --real corrected-1.5s.mp4 street-door
+```
+
+ONE pass from the RAW — never re-process the shipped file, never stack passes. The LUT is fully
+in range (0→2.7/4.4/3.4, 255→245.9/225.9/223.4) so nothing clips.
+
+**Result at the boundaries** (endpoint vs the still it dissolves against):
+
+| boundary | grade pulse (Δluma) | stretch pulse | MAD |
+|---|---|---|---|
+| START | 4.14 → **1.42** | 8.9px → **1.9px** | 17.24 → 12.80 |
+| END | 3.03 → **0.43** | 6.1px → **0.3px** | 15.66 → 12.20 |
+
+The residual MAD (~12) is the gen's **repaint** — different texture/detail, which no global grade
+or scale can remove. It is unstructured, so it does not read as a pulse. On-screen (CDP screencast,
+`design/review/entry-{before,after}.mp4`) the frame walked DOWN 1.56 luma levels through the hold
+dissolve before, and is flat to 0.08 after.

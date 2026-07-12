@@ -10,15 +10,14 @@ import { FIRST_STATION, STATIONS } from "@/data/stations";
 export default function Home() {
   return (
     <main className="relative flex min-h-screen flex-col items-center justify-center px-6 text-center">
-      {/* Storefront title-card backdrop — REUSE the committed street-door poster (out0, the
-          street station's still); no new asset. Full-bleed, centered, object-cover-equivalent. */}
+      {/* Storefront title-card backdrop — the street station's REST FRAME (the crisp out0
+          composite), the same file /store opens on. Deliberately NOT the clip's poster any more:
+          that is the gen's soft, repainted rendering of this exact plate, so the wordmark and
+          sign type were mush on the very first thing anyone sees. Full-bleed, object-cover. */}
       <div
         aria-hidden
         className="absolute inset-0 bg-cover bg-center"
-        style={{
-          backgroundImage:
-            "url(/transitions/street-door/street-door.poster.jpg)",
-        }}
+        style={{ backgroundImage: "url(/stills/entry-street.jpg)" }}
       />
       {/* Legibility scrim — leans dark on purpose: this is a title card, so the bright warm
           windows must not fight the white title block. Sits OVER the image, UNDER the content. */}
