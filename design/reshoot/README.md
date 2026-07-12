@@ -184,7 +184,16 @@ TRIM=4 bash public/transitions/_placeholder/encode.sh --real <winner-take.mp4> s
 
 ---
 
-## Boundary correction — the grade pulse and the stretch pulse (deterministic, at encode)
+## Boundary correction — SUPERSEDED by design/reshoot/correct_walkup.py (per-frame ramp)
+
+> The constant correction documented below shrank the pulses but did not kill them: its fit was a
+> SIMILARITY (`estimateAffinePartial2D`), which structurally cannot represent sx != sy, so it averaged
+> the two axes and left the VERTICAL error behind — the "door gets taller at the hold" report. The
+> drift is both ANISOTROPIC (sy/sx +0.66% at the start, +1.21% at the end) and TIME-VARYING. It is now
+> corrected per-frame by a full-affine + grade RAMP between the two measured endpoint fits; see the
+> module docstring of `correct_walkup.py`. Kept below for the record.
+
+### (historical) constant correction
 
 The still-rest model dissolves still↔video at each end of the walk-up. Two *systematic* gen
 behaviours showed up **as pulses across those dissolves**, because a dissolve makes any constant
