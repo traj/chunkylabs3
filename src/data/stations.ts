@@ -169,8 +169,16 @@ export const STATIONS: readonly Station[] = [
       // Real encode — the street → door WALK-UP, BRANDED (Roll 2 of the sticker reshoot: generated
       // from the harmonized sticker-composited pins, so the wordmark / OPEN sign / flyers are on
       // the glass throughout). REPLACES the retired OG storefront push-in (/transitions/door/door.*
-      // — now DEAD on disk, cleanup later). Single clean setpts=PTS/4 from the 8s raw → 2s at 24fps
-      // (48 frames, all distinct — no duplicate frames, no judder), then TRIM=2 keeps the whole clip.
+      // — now DEAD on disk, cleanup later). Built from the 8s RAW (never re-sped from a processed
+      // file) by EXPLICIT frame selection — 36 evenly-spaced source frames, anchored bit-exact on
+      // the raw's true frame 0 and true final frame — laid on a 24fps timeline → 1.5s, every frame
+      // distinct (no dupes, no judder). TRIM=1.5 keeps the whole clip.
+      //
+      // Frame selection is deliberately NOT `fps=24`: this raw has a PTS gap near the head, and the
+      // fps filter (round=near) resolves output slot 0 to the LAST source frame in the slot — it
+      // silently DROPS true frame 0, so the poster/still would drift into the push. Selecting frame
+      // indices outright is the only way to guarantee both endpoints.
+      //
       // Lands HELD on out1: every baked element sits within 6.5px of its .pen footprint at 1920
       // scale (gate: ≤15px), so the DOM overlay layer can later cover its baked twin cleanly. The
       // raw settles by t≈7.8s of 8s with NO overshoot past the end pin. Poster = frame 0 = the
@@ -178,7 +186,7 @@ export const STATIONS: readonly Station[] = [
       av1Src: "/transitions/street-door/street-door.av1.mp4",
       h264Src: "/transitions/street-door/street-door.h264.mp4",
       poster: "/transitions/street-door/street-door.poster.jpg",
-      durationSec: 2,
+      durationSec: 1.5,
     },
     dom: {
       heading: "Come in",
