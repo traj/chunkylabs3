@@ -23,6 +23,35 @@ FPS=30
 # --real <raw> vibes`. Keep this in lockstep with the station's durationSec.
 TRIM="${TRIM:-4}"
 
+# ---------------------------------------------------------------------------------------------
+# COLOUR TAGS — MANDATORY on every output, both codecs.
+#
+# Our clips used to ship UNTAGGED (color_range/space/primaries/transfer all "unknown"), which
+# means every decoder GUESSES — and they guess differently. Measured on the entry walk-up:
+#   * ffmpeg read the untagged file as BT.601; Chrome renders it as BT.709 -> a ~2.2 luma gap
+#     between what our calibration tools saw and what the visitor actually saw. Any grade fitted
+#     with ffmpeg was therefore fitted against the wrong picture.
+#   * WORSE: the AV1 and H.264 renditions of the SAME frames painted ~2 luma apart in Chrome
+#     (65.24 vs 67.21), so the entry looked different depending on which <source> the browser
+#     picked. iOS takes the H.264 path — the worse of the two.
+#
+# Tagging alone is not enough: the tags DECLARE a colourspace, they do not change the matrix
+# swscale uses to convert. Anything entering here as RGB must ALSO be converted with the bt709
+# matrix (see design/reshoot/correct_walkup.py, which writes its intermediate with
+# scale=out_color_matrix=bt709:out_range=tv). Inputs that are already yuv420p pass through
+# untouched and are simply tagged.
+COLOR_TAGS=(-color_range tv -colorspace bt709 -color_primaries bt709 -color_trc bt709)
+#
+# The generic -color_* flags above only reach the CONTAINER/stream metadata — measured: they set
+# the matrix but left primaries/transfer "unknown" in BOTH bitstreams. Browsers trust the
+# BITSTREAM, so the description has to be written there too, per encoder. Without this the AV1 and
+# H.264 renditions of identical YUV painted 2.2 luma apart in Chrome (ffmpeg decoded them 0.24
+# apart — i.e. the pixels always agreed; only the decoders' guesses did not).
+# 1 = BT.709 for primaries/transfer/matrix; SVT-AV1 color-range 0 = studio/limited.
+X264_COLOR=(-x264-params "colorprim=bt709:transfer=bt709:colormatrix=bt709")
+SVTAV1_COLOR=(-svtav1-params "color-primaries=1:transfer-characteristics=1:matrix-coefficients=1:color-range=0")
+
+
 # Real-asset mode: encode ONE real source clip (landscape) to the SAME spec the synthetic
 # clips use — AV1 (SVT-AV1, Profile 0 8-bit) + H.264 (Main@4.0) + first-frame poster, GOP
 # 60, +faststart. Trims the FIRST $TRIM seconds (-ss 0 -t $TRIM). The real clip IS the
@@ -39,6 +68,7 @@ encode_real() {
     -ss 0 -t "$TRIM" -i "$input" \
     -vf "format=yuv420p" -map 0:v:0 -an \
     -c:v libsvtav1 -preset 6 -crf 38 -g 60 \
+    "${COLOR_TAGS[@]}" "${SVTAV1_COLOR[@]}" \
     -movflags +faststart \
     "$out/$dest.av1.mp4"
 
@@ -47,6 +77,7 @@ encode_real() {
     -ss 0 -t "$TRIM" -i "$input" \
     -vf "format=yuv420p" -map 0:v:0 -an \
     -c:v libx264 -profile:v main -level:v 4.0 -preset medium -crf 23 -g 60 \
+    "${COLOR_TAGS[@]}" "${X264_COLOR[@]}" \
     -movflags +faststart \
     "$out/$dest.h264.mp4"
 
@@ -74,6 +105,7 @@ encode_reverse() {
     -i "$input" \
     -vf "reverse,format=yuv420p" -map 0:v:0 -an \
     -c:v libsvtav1 -preset 6 -crf 38 -g 60 \
+    "${COLOR_TAGS[@]}" "${SVTAV1_COLOR[@]}" \
     -movflags +faststart \
     "$out/$dest.av1.mp4"
 
@@ -82,6 +114,7 @@ encode_reverse() {
     -i "$input" \
     -vf "reverse,format=yuv420p" -map 0:v:0 -an \
     -c:v libx264 -profile:v main -level:v 4.0 -preset medium -crf 23 -g 60 \
+    "${COLOR_TAGS[@]}" "${X264_COLOR[@]}" \
     -movflags +faststart \
     "$out/$dest.h264.mp4"
 
@@ -118,6 +151,7 @@ encode() {
     -i "$png" \
     -filter_complex "$filt" -map "[v]" -an \
     -c:v libsvtav1 -preset 6 -crf 38 -g 60 \
+    "${COLOR_TAGS[@]}" "${SVTAV1_COLOR[@]}" \
     -movflags +faststart \
     "$DIR/$dest.av1.mp4"
 
@@ -127,6 +161,7 @@ encode() {
     -i "$png" \
     -filter_complex "$filt" -map "[v]" -an \
     -c:v libx264 -profile:v main -level:v 4.0 -preset medium -crf 23 -g 60 \
+    "${COLOR_TAGS[@]}" "${X264_COLOR[@]}" \
     -movflags +faststart \
     "$DIR/$dest.h264.mp4"
 

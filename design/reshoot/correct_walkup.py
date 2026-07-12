@@ -67,9 +67,19 @@ REPO = os.path.abspath(os.path.join(HERE, "..", ".."))
 OUT0 = os.path.join(HERE, "out0-composited.png")   # street rest master
 OUT1 = os.path.join(HERE, "out1-composited.png")   # door rest master
 
-# The 36 shipped frames: explicit source indices (81c8fbd) — anchored bit-exactly on the raw's
-# true frame 0 and true final frame, evenly spaced between them, laid on a 24fps timeline.
-IDX = [round(j * 192 / 35) for j in range(36)]
+# The 18 shipped frames: explicit source indices — anchored bit-exactly on the raw's true frame 0
+# and true final frame (the endpoints are what the dissolves blend against, so they must be the
+# real anchors, not resampled), evenly spaced between them, laid on a 24fps timeline => 0.75s.
+N_FRAMES = 18
+IDX = [round(j * 192 / (N_FRAMES - 1)) for j in range(N_FRAMES)]
+
+# Per-frame gain nudge cap. The interior of the clip rides ABOVE the straight line between the two
+# anchored endpoints (measured on the 1576247 encode: +2.03 luma peak at 80% through, excursion
+# entirely positive — a sustained bow, not noise). That bow is what reads as "the video is lighter
+# than the still". Each frame's per-channel mean is nudged back onto the endpoint-to-endpoint ramp
+# by a multiplicative gain (gain, not offset — it preserves black and contrast). Capped so a bad
+# fit can never blow a frame out; the largest gain actually applied is reported.
+NUDGE_CAP = 0.06
 
 # ---- fitted constants (re-derive with --fit) --------------------------------------------------
 # Full affine VIDEO -> STILL at each endpoint (2x3), and the per-channel linear grade still = a*v+b.
@@ -83,13 +93,14 @@ GRADE_END = [(1.000116, -1.3929), (0.947881, -0.3742), (0.943304, -0.9992)]
 # Delivery-encode pre-compensation, per channel, ADDED to the grade offset — and RAMPED, because
 # the shift is not the same at both ends.
 #
-# The grade fit is exact in float, but the frames then go RGB -> yuv420p -> H.264 (chroma
-# subsampling + CRF), which shifts each channel's mean. The gate is on the SHIPPED frames, not the
-# intermediates, so that shift has to be pre-compensated here or it lands in the dissolve. Measured
-# by encoding once and reading the residual of the decoded frames against the stills, then folded
-# back in. Re-derive by re-running and reading the endpoint proof's ΔR/ΔG/ΔB.
-ENC_COMP_START = (+0.10, +0.49, +0.01)
-ENC_COMP_END = (-0.138, +0.535, +0.195)
+# CALIBRATED AGAINST THE BROWSER, NOT FFMPEG. The clips used to ship untagged, so ffmpeg read them
+# as BT.601 while Chrome rendered them as BT.709 — a ~2.2 luma gap. Every earlier grade was
+# therefore fitted against a picture the visitor never saw, which is why the video kept reading
+# light no matter how "exact" the ffmpeg-side gate looked. encode.sh now tags bt709 and the
+# intermediate below is converted with the bt709 matrix, so decoder and browser finally agree; the
+# residual is then closed against CDP-PAINTED values on BOTH codec paths.
+ENC_COMP_START = (-0.820, -0.605, -1.480)
+ENC_COMP_END = (-0.435, -0.435, -1.065)
 
 
 # ---- affine decompose / recompose (so we can interpolate in a meaningful basis) ---------------
@@ -162,7 +173,7 @@ def extract(raw, workdir):
     subprocess.run(["ffmpeg", "-y", "-v", "error", "-i", raw, "-vf", f"select='{expr}'",
                     "-vsync", "0", os.path.join(workdir, "r_%02d.png")], check=True)
     fs = sorted(f for f in os.listdir(workdir) if f.startswith("r_"))
-    assert len(fs) == 36, f"expected 36 frames, got {len(fs)}"
+    assert len(fs) == N_FRAMES, f"expected {N_FRAMES} frames, got {len(fs)}"
     return [os.path.join(workdir, f) for f in fs]
 
 
@@ -198,24 +209,58 @@ def main():
               f"({(p['sy']/p['sx']-1)*100:+.3f}%)  rot {math.degrees(p['rot']):+.4f}°  "
               f"shear {p['shear']:+.5f}  t ({p['tx']:+.2f},{p['ty']:+.2f})")
 
+    n = len(frames)
+    # PASS 1 — affine + grade only, keeping just the per-channel means. (Two passes so we never
+    # hold 18 full float frames in memory.)
+    means = np.zeros((n, 3))
+    for j, f in enumerate(frames):
+        t = j / (n - 1)
+        img = correct_frame(load(f), lerp_affine(M_START, M_END, t), lerp_grade(t))
+        means[j] = img.reshape(-1, 3).mean(0)
+
+    # The endpoint-to-endpoint ramp: the straight line the interior should ride. The endpoints are
+    # anchored on the stills by the grade fit, so this line runs still-to-still by construction.
+    ramp = np.stack([np.linspace(means[0, c], means[-1, c], n) for c in range(3)], 1)
+    exc = means - ramp
+    LUM = np.array([0.299, 0.587, 0.114])
+    print(f"\n  interior excursion above the endpoint ramp (BEFORE nudge): "
+          f"peak {(exc @ LUM).max():+.2f} luma at frame {int((exc @ LUM).argmax())}/{n-1}")
+
+    # PASS 2 — re-correct and nudge each frame's means onto the ramp.
     outdir = os.path.join(work, "corrected")
     os.makedirs(outdir, exist_ok=True)
+    gains = np.ones((n, 3))
     for j, f in enumerate(frames):
-        t = j / (len(frames) - 1)
-        M = lerp_affine(M_START, M_END, t)
-        img = correct_frame(load(f), M, lerp_grade(t))
+        t = j / (n - 1)
+        img = correct_frame(load(f), lerp_affine(M_START, M_END, t), lerp_grade(t))
+        g = np.clip(ramp[j] / np.maximum(means[j], 1e-6), 1 - NUDGE_CAP, 1 + NUDGE_CAP)
+        gains[j] = g
+        img = np.clip(img * g, 0, 255)
         # ROUND, never truncate. `astype(uint8)` floors, which costs a systematic ~0.5 level per
         # channel — enough on its own to fail the <0.5 grade gate the dissolves are judged by.
         Image.fromarray(np.rint(img).astype(np.uint8)).save(os.path.join(outdir, f"c_{j:02d}.png"))
-    print(f"\nwrote {len(frames)} corrected frames -> {outdir}")
 
-    dest = os.path.join(work, "corrected-1.5s.mp4")
+    worst = int(np.abs(gains - 1).max(1).argmax())
+    print(f"  largest nudge applied: {(np.abs(gains - 1).max()) * 100:.2f}% at frame {worst}/{n-1} "
+          f"(R {gains[worst,0]:.4f}  G {gains[worst,1]:.4f}  B {gains[worst,2]:.4f})   cap {NUDGE_CAP*100:.0f}%")
+    print(f"  endpoints untouched by the nudge: f0 gain {gains[0]}, f{n-1} gain {gains[-1]}")
+    print(f"\n  wrote {n} corrected frames -> {outdir}")
+
+    secs = n / 24
+    dest = os.path.join(work, f"corrected-{secs:g}s.mp4")
+    # BT.709 MATRIX, not just the tag. These frames are RGB; swscale would otherwise convert them
+    # to YUV with its BT.601 default, and the browser would then decode them as BT.709 — the exact
+    # mismatch that made every earlier grade land ~2 luma light on screen.
     subprocess.run(["ffmpeg", "-y", "-v", "error", "-framerate", "24",
                     "-i", os.path.join(outdir, "c_%02d.png"),
+                    "-vf", "scale=out_color_matrix=bt709:out_range=tv",
                     "-c:v", "libx264", "-qp", "0", "-preset", "veryfast",
-                    "-pix_fmt", "yuv420p", "-an", dest], check=True)
-    print(f"wrote {dest}  (36 frames @24fps = 1.5s, lossless)")
-    print("\nnext:  TRIM=1.5 bash public/transitions/_placeholder/encode.sh --real "
+                    "-pix_fmt", "yuv420p",
+                    "-color_range", "tv", "-colorspace", "bt709",
+                    "-color_primaries", "bt709", "-color_trc", "bt709",
+                    "-an", dest], check=True)
+    print(f"  wrote {dest}  ({n} frames @24fps = {secs:g}s, lossless, bt709/tv)")
+    print(f"\nnext:  TRIM={secs:g} bash public/transitions/_placeholder/encode.sh --real "
           f"{dest} street-door")
 
 

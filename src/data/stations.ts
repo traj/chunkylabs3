@@ -209,9 +209,9 @@ export const STATIONS: readonly Station[] = [
       // from the harmonized sticker-composited pins, so the wordmark / OPEN sign / flyers are on
       // the glass throughout). REPLACES the retired OG storefront push-in (/transitions/door/door.*
       // — now DEAD on disk, cleanup later). Built from the 8s RAW (never re-sped from a processed
-      // file) by EXPLICIT frame selection — 36 evenly-spaced source frames, anchored bit-exact on
-      // the raw's true frame 0 and true final frame — laid on a 24fps timeline → 1.5s, every frame
-      // distinct (no dupes, no judder). TRIM=1.5 keeps the whole clip.
+      // file) by EXPLICIT frame selection — 18 evenly-spaced source frames, anchored bit-exact on
+      // the raw's true frame 0 and true final frame — laid on a 24fps timeline → 0.75s, every frame
+      // distinct (no dupes, no judder). TRIM=0.75 keeps the whole clip.
       //
       // Frame selection is deliberately NOT `fps=24`: this raw has a PTS gap near the head, and the
       // fps filter (round=near) resolves output slot 0 to the LAST source frame in the slot — it
@@ -228,7 +228,7 @@ export const STATIONS: readonly Station[] = [
       // Poster stays the clip's own frame 0 (the locked poster contract — it is the pre-roll /
       // autoplay-blocked backdrop, so it must MATCH the frame the clip starts on, not the still).
       poster: "/transitions/street-door/street-door.poster.jpg",
-      durationSec: 1.5,
+      durationSec: 0.75,
     },
     // REST FRAME — the crisp out1 composite (close storefront + the .pen marks baked on). The clip
     // plays through, holds its last frame, and this dissolves over it: the held frame the visitor

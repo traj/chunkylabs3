@@ -326,3 +326,49 @@ Two walls to a fully navigable store. Still outstanding regardless: the **on-dev
 gauntlet** (Stage 3.2 — hardware-blocked on a non-AV1 iPhone + LPM) and **encode
 hardening** (vertical-crop branch, poster=last-frame fix, codec self-test, a built-in
 2× flag for pivots).
+
+---
+
+## Colour management — MANDATORY tags (and the Phase-2 debt)
+
+**Every clip must ship with an explicit colour description, in the BITSTREAM, on BOTH codecs.**
+`encode.sh` now does this (`COLOR_TAGS` + `X264_COLOR` + `SVTAV1_COLOR`), so all future encodes
+inherit it. This is not cosmetic — untagged clips shipped two real, measured bugs:
+
+1. **Tools and browsers disagreed.** With no tags, every decoder guesses. ffmpeg read our clips as
+   **BT.601**; Chrome renders them as **BT.709** — a ~2.2 luma gap. Every colour correction we
+   fitted with ffmpeg was therefore fitted against a picture the visitor never saw, which is why
+   the entry walk-up kept "reading lighter than the still" no matter how exact the ffmpeg-side
+   measurement looked.
+2. **AV1 and H.264 painted differently from each other.** Identical YUV (ffmpeg decoded them 0.24
+   luma apart) rendered **2.2 luma apart in Chrome** (AV1 62.38 vs H.264 64.60), so the scene
+   looked different depending on which `<source>` the browser picked. **iOS takes the H.264 path.**
+
+Two things are required, and the first alone is not enough:
+
+- **Tag it.** `-color_range tv -colorspace bt709 -color_primaries bt709 -color_trc bt709`. NOTE:
+  these generic flags only reach the container/stream metadata — measured, they set the matrix but
+  left primaries/transfer `unknown` in both bitstreams. Browsers trust the **bitstream**, so the
+  description must also be written by the encoder itself:
+  `-x264-params colorprim=bt709:transfer=bt709:colormatrix=bt709` and
+  `-svtav1-params color-primaries=1:transfer-characteristics=1:matrix-coefficients=1:color-range=0`.
+- **Convert with the right matrix.** Tags DECLARE a colourspace; they do not change the matrix
+  swscale uses. Anything entering the encoder as RGB must be converted with
+  `scale=out_color_matrix=bt709:out_range=tv` (see `design/reshoot/correct_walkup.py`). Inputs that
+  are already yuv420p pass through and are simply tagged.
+
+**Verify in the browser, not in ffmpeg.** Any grade/colour gate on an entry clip must be measured
+on what Chrome *paints* (CDP screenshot of the composited layer), on **both** codec paths. An
+ffmpeg-only gate is exactly how the above hid for four passes.
+
+### PHASE 2 (deferred, tracked here)
+
+**Re-encode ALL the other edges with the explicit colour tags.** Only the entry (`street-door`) was
+re-encoded when this landed. Everything else — `counter`, `counter-door`, the three walls
+(`mixes`/`crate`/`vibes`), the rotational ring, and the chained express clips — is **still
+untagged**, and therefore still carries the AV1/H.264 divergence above. They are not visibly broken
+today because nothing dissolves against a still on those edges (the still-rest model is entry-only),
+so there is no reference for the eye to catch the mismatch against — but the two codec paths do
+render them differently, and any future still-rest or colour work on the walls will hit this first.
+Re-run each edge through `encode.sh` from its master; no re-gen needed, the tags are an encode-time
+change. Do it as one sweep, and re-check the walls' held frames in the browser afterwards.
