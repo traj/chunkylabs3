@@ -144,6 +144,13 @@ export const STATIONS: readonly Station[] = [
     // Painted as the street's background so the opening shows the wide storefront, NOT black
     // (street is the only station with no inbound clip). Same file as the walk-up poster, so
     // clicking "Come in →" plays the walk-up seamlessly from this exact frame.
+    //
+    // BRANDED as of the Roll-2 reshoot: the walk-up is now generated from the sticker-composited
+    // pins, so its frame 0 — hence this still — already carries the wordmark / OPEN sign. It is
+    // deliberately NOT pointed at design/reshoot/out0-composited.png: the gen RE-RENDERS its start
+    // pin (frame 0 vs that PNG = MAD 17.3 / PSNR 19.2dB — whole-frame repaint, not just stickers),
+    // so using the PNG would pop the instant playback began. `still` must stay the clip's own
+    // frame 0; that is what makes the pre-roll handoff seamless (MAD 1.8 = codec noise only).
     still: "/transitions/street-door/street-door.poster.jpg",
     dom: {
       heading: "chunkylabs",
@@ -159,17 +166,19 @@ export const STATIONS: readonly Station[] = [
     slug: "door",
     description: "Push-in through the front door. The bell rings.",
     transitionIn: {
-      // Real encode — the street → door WALK-UP (new centered storefront: out0 → out1, a gentle
-      // push-in trimmed to 4s at original walking pace). REPLACES the retired OG storefront
-      // push-in (/transitions/door/door.* — now DEAD on disk, cleanup later). Lands HELD on out1
-      // (the close centered storefront — door centered + prominent; the clip's own last frame, a
-      // touch past out1's exact framing but no overshoot). Poster = frame 0 = out0 = the street's
-      // `still`, for a seamless pre-roll. AV1 av01.0.08M.08 + H.264 avc1.4D4028 (verified against
-      // the OG clip — identical encode params; match the engine's <source> types).
+      // Real encode — the street → door WALK-UP, BRANDED (Roll 2 of the sticker reshoot: generated
+      // from the harmonized sticker-composited pins, so the wordmark / OPEN sign / flyers are on
+      // the glass throughout). REPLACES the retired OG storefront push-in (/transitions/door/door.*
+      // — now DEAD on disk, cleanup later). Single clean setpts=PTS/4 from the 8s raw → 2s at 24fps
+      // (48 frames, all distinct — no duplicate frames, no judder), then TRIM=2 keeps the whole clip.
+      // Lands HELD on out1: every baked element sits within 6.5px of its .pen footprint at 1920
+      // scale (gate: ≤15px), so the DOM overlay layer can later cover its baked twin cleanly. The
+      // raw settles by t≈7.8s of 8s with NO overshoot past the end pin. Poster = frame 0 = the
+      // street's `still`, for a seamless pre-roll. AV1 av01.0.08M.08 + H.264 avc1.4D4028.
       av1Src: "/transitions/street-door/street-door.av1.mp4",
       h264Src: "/transitions/street-door/street-door.h264.mp4",
       poster: "/transitions/street-door/street-door.poster.jpg",
-      durationSec: 4,
+      durationSec: 2,
     },
     dom: {
       heading: "Come in",
