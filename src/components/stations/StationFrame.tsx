@@ -2,31 +2,33 @@
 
 import Link from "next/link";
 import { useRef } from "react";
-import type {
-  Station,
-  StationExit,
-  StationId,
-  TransitionAsset,
+import {
+  STATIONS,
+  type Station,
+  type StationExit,
+  type StationId,
+  type TransitionAsset,
 } from "@/data/stations";
 import { StationTransition } from "./StationTransition";
-import { StationElementLayer } from "./StationElementLayer";
+import { StationStill } from "./StationStill";
+import { StationHotspots } from "./StationHotspots";
 import { useTransitionPhase } from "./useTransitionPhase";
 import { usePlaybackUnlock } from "./PlaybackUnlock";
 
-// The two entry stations carry the door-layer element overlay (the crisp marks that cover the
-// walk-up's soft baked twins). Keyed off the station id — the walls have no such layer.
+// The two entry stations run the STILL-REST model: a crisp composited still is the resting frame
+// at each end, and the clip is a pure in-between that the stills dissolve into and out of.
 const STREET_ID: StationId = "street";
 const DOOR_ID: StationId = "door";
 
-// The overlay only makes sense over the WALK-UP, whose frame 0 IS the street's still. Arriving
-// at the door from the counter plays the reversed interior clip instead — it opens inside the
-// store, where street-placed marks would be nonsense — so the street set is gated on this edge.
+// The entry still (the street's own rest frame) is what the walk-up opens ON, so the door station
+// starts by showing it and dissolves it into the moving clip. Only this edge: any other clip into
+// the door would begin somewhere else entirely, and painting the storefront over it is nonsense.
 const WALKUP_CLIP = "/transitions/street-door/";
 
-// Fade choreography. Out is quicker than in: the marks must be GONE before the facade has
-// visibly moved (they're pinned to frame 0 and would smear), whereas the arrival can settle.
-const FADE_OUT_MS = 150;
-const FADE_IN_MS = 250;
+// Boundary dissolves. Both ends get the same ~250ms: long enough to hide the gen's whole-frame
+// repaint delta (the clip's endpoints are ~16-17 MAD off the composites), short enough that the
+// entry still feels like a walk rather than a fade-through.
+const DISSOLVE_MS = 250;
 
 // Fixed edge safe zones for directional exit CTAs, keyed by StationExit.direction. ONE shared
 // map for every station; the scene copy (lower-left, bounded) is positioned to clear all of
@@ -101,35 +103,32 @@ export function StationFrame({
     hasClip: hasTransition,
   });
 
-  const isStreet = station.id === STREET_ID;
   const isDoor = station.id === DOOR_ID;
   // Is the clip playing into the door the street→door walk-up (vs an interior reverse)?
   const isWalkUpEdge = Boolean(asset?.h264Src?.startsWith(WALKUP_CLIP));
+  // The frame the walk-up OPENS on = the street's own rest still. Read from STATIONS rather than
+  // duplicated here, so the two can never point at different files.
+  const entryStill = STATIONS.find((s) => s.id === STREET_ID)?.still;
 
-  // THE HOLD — when the crisp marks may land. Two ways to be at rest:
-  //   `ended` — a clip played through once and now holds its final frame.
+  // AT REST — the scene is STILL, so the crisp composite may hold the screen. Two ways:
+  //   `ended` — a clip played through once and now holds its final frame (the door).
   //   `none`  — the edge has NO clip, so the scene is already still on arrival. This is how the
-  //             street is always reached (door→street and counter→street are clip-less
-  //             crossfades); waiting for an `ended` there would wait forever.
-  // Gated on isActive so a neighbour mounted mid-hold never shows its overlay through a swap.
+  //             street is ALWAYS reached: door→street and counter→street are clip-less crossfade
+  //             edges (the counter's back exit goes to the street, not the door), so waiting for
+  //             an `ended` there would wait forever.
+  // Gated on isActive so a neighbour mounted mid-hold never shows its still through a swap, and
+  // so a stale `ended` from a previous visit can't paint over a re-armed, moving clip.
   const atRest = isActive && (phase === "ended" || phase === "none");
 
-  // The OPEN sign is a diegetic CTA: it fires the door's own forward exit rather than a
-  // hard-coded target, so it can never desync from the button it doubles (stations.ts is the
-  // single source of the nav graph). The <button> CTAs stay exactly as they were — this is an
-  // ADDITIONAL trigger, not a replacement.
-  const signExit = isDoor
-    ? station.exits?.find((e) => e.direction === "forward")
-    : undefined;
-
-  // STREET SET on the door station: the walk-up opens on frame 0 = the street's still, so the
-  // crisp street marks carry across the (instant) scene swap and then DIP OUT as motion starts.
-  // Without this the swap would pop crisp→soft, and the 150ms fade would be invisible: the
-  // street's own section snaps to opacity 0 (street→door is not a crossfade edge), taking its
-  // overlay with it before any fade could play.
-  // `idle` = parked on frame 0: preloading as a neighbour, or freshly re-armed. Explicitly NOT
-  // `playing` (the facade is moving) and NOT `ended` (the door set owns the hold).
-  const showStreetSetOnDoor = isDoor && isWalkUpEdge && phase === "idle";
+  // ENTRY STILL on the door station. The walk-up opens on the street's own rest frame, so the door
+  // scene starts holding that SAME crisp still — the (instant) street→door section swap therefore
+  // shows an identical image — and then dissolves it into the moving clip. Without it the swap
+  // would hard-cut the crisp composite to the gen's repainted frame 0 (MAD 17.3 apart): a visible
+  // pop. It can't live on the street's own section — street→door is not a crossfade edge, so that
+  // section snaps to opacity 0 and takes any fade with it.
+  // `idle` = parked on frame 0 (preloading as a neighbour, or freshly re-armed): explicitly NOT
+  // `playing` (dissolve away, the facade is moving) and NOT `ended` (the rest still owns the hold).
+  const showEntryStill = isDoor && isWalkUpEdge && phase === "idle";
 
   // Visibility/stacking. `transition-opacity` is ALWAYS present so the crossfade animates
   // reliably (the property pre-exists; only the duration changes). Normal swaps use
@@ -186,39 +185,24 @@ export function StationFrame({
 
       {/* 1b. ELEMENT LAYER — the crisp door-layer marks, pinned to the object-cover box of the
           frame BELOW them (not the viewport), so they stay glued to the facade at any aspect.
-          Entry stations only; it sits UNDER the scrim and the DOM layer, because these marks
-          are part of the scene (paint on the glass), not part of the UI. */}
-      {isStreet ? (
-        // The street rests on its still and is always arrived at clip-less (phase `none`), so it
-        // is at rest the moment it's active — but it goes through the SAME atRest gate as the
-        // door rather than a bare isActive, so the two stations can't drift apart in behaviour.
-        <StationElementLayer set="street" visible={atRest} fadeMs={FADE_OUT_MS} />
-      ) : null}
-
-      {isDoor ? (
+          Entry stations only; it sits UNDER the scrim and the DOM layer, because these frames are
+          part of the SCENE, not part of the UI — they take the same grading as everything else. */}
+      {isDoor && station.still ? (
         <>
-          {/* Carried across the swap on frame 0, then dips out as the walk-up starts moving. */}
-          <StationElementLayer
-            set="street"
-            visible={showStreetSetOnDoor}
-            fadeMs={FADE_OUT_MS}
+          {/* ENTRY still (the street's rest frame) — held over the clip's frame 0 so the section
+              swap is image-identical, then dissolved away as the walk-up starts moving. */}
+          <StationStill
+            src={entryStill ?? station.still}
+            visible={showEntryStill}
+            fadeMs={DISSOLVE_MS}
           />
-          {/* THE HOLD: the clip has played through and the facade is STILL — only now may the
-              crisp marks land on top of their soft baked twins. Strictly `atRest`: never while
-              `playing` (they'd smear over a moving facade) and never on a stale `ended` carried
-              over from a previous visit (the re-entry bug — the hook voids it on activation). */}
-          <StationElementLayer
-            set="door"
+          {/* REST still — the hold. The clip has played through and holds its last frame; this
+              crisp composite dissolves over it and is what the visitor actually dwells on. */}
+          <StationStill
+            src={station.still}
             visible={atRest}
-            fadeMs={FADE_IN_MS}
-            onSignClick={
-              signExit
-                ? () => {
-                    markUnlocked();
-                    goToId(signExit.to);
-                  }
-                : undefined
-            }
+            fadeMs={DISSOLVE_MS}
+            priority
           />
         </>
       ) : null}
@@ -228,6 +212,23 @@ export function StationFrame({
         aria-hidden
         className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-black/40"
       />
+
+      {/* 1c. HOTSPOTS — transparent, percentage-anchored click regions ON the scene (imagemap).
+          Above the scrim so the hover affordance reads, but still under the DOM layer, so a real
+          CTA button always wins the click where they overlap. Only live once the scene is at
+          rest — you can't click a facade that hasn't arrived yet. */}
+      {station.hotspots?.length ? (
+        <StationHotspots
+          hotspots={station.hotspots}
+          interactive={atRest}
+          onNavigate={(to) => {
+            // Same gesture contract as the button CTAs: capture the transient activation for iOS
+            // media autoplay synchronously, BEFORE the re-render mounts the next clip.
+            markUnlocked();
+            goToId(to);
+          }}
+        />
+      ) : null}
 
       {/* 2. DOM LAYER — full-bleed; every child is pinned to a fixed safe zone so scene copy
           and directional CTAs can never collide (ONE shared layout, all stations). The layer

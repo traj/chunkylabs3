@@ -88,6 +88,31 @@ export interface StationExit {
   direction?: "forward" | "back" | "left" | "right" | "up" | "down";
 }
 
+/**
+ * A transparent, clickable region ON the scene — the imagemap model (StationHotspots).
+ *
+ * The rect is a PERCENTAGE of the 1920x1080 master frame, so it is resolution- and
+ * aspect-independent: the renderer places it inside the measured object-cover box, which keeps it
+ * welded to the thing it sits on (the door, the storefront) at any window shape.
+ *
+ * A hotspot is ADDITIVE — a diegetic double for an exit the visitor can already take via a real
+ * <button> CTA. It must never be the only route to a destination: it is invisible, so it carries
+ * no affordance for keyboard or screen-reader users. Keep a matching entry in `exits`.
+ *
+ * Deliberately generic (id/label/rect/to) so the walls can reuse it for the zone→tray model
+ * without changing the type.
+ */
+export interface StationHotspot {
+  /** Stable id, unique within the station. */
+  id: string;
+  /** Human-readable intent, e.g. "Go inside — the counter". Used as the region's tooltip. */
+  label: string;
+  /** Station this region navigates to. MUST also exist as a real exit (see above). */
+  to: StationId;
+  /** Percentage rect of the 1920x1080 master frame. */
+  rect: { xPct: number; yPct: number; wPct: number; hPct: number };
+}
+
 export interface Station {
   /** Stable id; also used as the in-page anchor target. */
   id: StationId;
@@ -105,14 +130,20 @@ export interface Station {
    */
   transitionIn: TransitionAsset | null;
   /**
-   * Optional static still painted full-bleed as the scene background when this station has NO
-   * inbound transition clip (`transitionIn: null`). The first station (street) has nothing to
-   * play it in, so without this it renders the empty placeholder over black; pointing this at
-   * the storefront still makes the opening show the store. Point it at the SAME file as the
-   * outbound clip's poster (frame 0) so the swap into that clip is seamless. Ignored when
-   * `transitionIn` is set (the video's own frames are the scene).
+   * The station's RESTING FRAME — the crisp composited still the visitor actually looks at while
+   * standing here. Painted full-bleed (object-cover) when the station has no inbound clip.
+   *
+   * STILL-REST MODEL: this is no longer "the clip's poster". The gen'd clips are pure in-betweens
+   * that carry motion; the frames at either END are these composites, baked from design/
+   * door-layer.pen by compose_reshoot.py, so the wordmark / OPEN sign / stickers are sharp by
+   * construction rather than the soft, warped versions the gen painted. It therefore deliberately
+   * does NOT match the clip's frame 0 any more (Cinema Studio repaints its pins — frame 0 is MAD
+   * 17.3 off this composite): the entry stations cross-dissolve still↔video at each boundary
+   * (StationStill), and that dissolve is what hides the delta. A hard cut would show it.
    */
   still?: string;
+  /** Transparent, clickable regions ON the scene. Additive to `exits` — see StationHotspot. */
+  hotspots?: readonly StationHotspot[];
   /** DOM layer composited over the scene. */
   dom: StationDomLayer;
   /**
@@ -140,18 +171,26 @@ export const STATIONS: readonly Station[] = [
     description:
       "Exterior. Neon in the window, rain on the glass. You're standing outside chunkylabs.",
     transitionIn: null,
-    // Entry storefront still (out0 = the street→door walk-up's FIRST frame, i.e. its poster).
-    // Painted as the street's background so the opening shows the wide storefront, NOT black
-    // (street is the only station with no inbound clip). Same file as the walk-up poster, so
-    // clicking "Come in →" plays the walk-up seamlessly from this exact frame.
+    // REST FRAME — the crisp out0 composite (wide storefront + the .pen door-layer marks baked
+    // on). This SUPERSEDES the old frame-0 poster: the poster was the gen's soft, repainted
+    // rendering of this exact plate, so the wordmark and sign type were mush. The street is the
+    // first thing anyone sees; it should be the sharp one.
     //
-    // BRANDED as of the Roll-2 reshoot: the walk-up is now generated from the sticker-composited
-    // pins, so its frame 0 — hence this still — already carries the wordmark / OPEN sign. It is
-    // deliberately NOT pointed at design/reshoot/out0-composited.png: the gen RE-RENDERS its start
-    // pin (frame 0 vs that PNG = MAD 17.3 / PSNR 19.2dB — whole-frame repaint, not just stickers),
-    // so using the PNG would pop the instant playback began. `still` must stay the clip's own
-    // frame 0; that is what makes the pre-roll handoff seamless (MAD 1.8 = codec noise only).
-    still: "/transitions/street-door/street-door.poster.jpg",
+    // It no longer matches the walk-up's frame 0 (the gen repaints its pins — MAD 17.3 apart), and
+    // that is fine BY DESIGN: the door station opens on this same still and cross-dissolves into
+    // the clip, so the delta is absorbed by the dissolve instead of popping on a hard cut.
+    still: "/stills/entry-street.jpg",
+    // Diegetic double for "Come in →": the storefront itself is clickable. Rect = the facade's
+    // measured footprint in out0 — the whole shop front, [366,158]-[1545,818] of the 1920x1080
+    // master (the out1→out0 transform's image; see design/reshoot/README.md).
+    hotspots: [
+      {
+        id: "storefront",
+        label: "Come in",
+        to: "door",
+        rect: { xPct: 19.06, yPct: 14.63, wPct: 61.41, hPct: 61.11 },
+      },
+    ],
     dom: {
       heading: "chunkylabs",
       body: "A record store that only exists here.",
@@ -179,15 +218,33 @@ export const STATIONS: readonly Station[] = [
       // silently DROPS true frame 0, so the poster/still would drift into the push. Selecting frame
       // indices outright is the only way to guarantee both endpoints.
       //
-      // Lands HELD on out1: every baked element sits within 6.5px of its .pen footprint at 1920
-      // scale (gate: ≤15px), so the DOM overlay layer can later cover its baked twin cleanly. The
-      // raw settles by t≈7.8s of 8s with NO overshoot past the end pin. Poster = frame 0 = the
-      // street's `still`, for a seamless pre-roll. AV1 av01.0.08M.08 + H.264 avc1.4D4028.
+      // Lands HELD on out1. The clip is now a pure IN-BETWEEN: what rests on screen at either end
+      // is a crisp composite (`still` below / the street's `still`), cross-dissolved over this
+      // video, so the gen's soft baked marks are never what the visitor dwells on.
+      // The raw settles by t≈7.8s of 8s with NO overshoot past the end pin.
+      // AV1 av01.0.08M.08 + H.264 avc1.4D4028.
       av1Src: "/transitions/street-door/street-door.av1.mp4",
       h264Src: "/transitions/street-door/street-door.h264.mp4",
+      // Poster stays the clip's own frame 0 (the locked poster contract — it is the pre-roll /
+      // autoplay-blocked backdrop, so it must MATCH the frame the clip starts on, not the still).
       poster: "/transitions/street-door/street-door.poster.jpg",
       durationSec: 1.5,
     },
+    // REST FRAME — the crisp out1 composite (close storefront + the .pen marks baked on). The clip
+    // plays through, holds its last frame, and this dissolves over it: the held frame the visitor
+    // actually reads is the sharp one, where "Come in / WE'RE / OPEN" is legible instead of the
+    // gen's garbled "Cwn is / WETIE". Same plate, 15.8 MAD apart — hence the dissolve, not a cut.
+    still: "/stills/entry-door.jpg",
+    // Diegetic double for "To the counter →": the door itself is clickable. Rect covers the door
+    // slab + the OPEN sign hanging on it (master coords ~[854,227]-[1085,950]).
+    hotspots: [
+      {
+        id: "doorway",
+        label: "Go inside — the counter",
+        to: "counter",
+        rect: { xPct: 44.5, yPct: 21, wPct: 12, hPct: 67 },
+      },
+    ],
     dom: {
       heading: "Come in",
       body: "Mind the step.",

@@ -382,6 +382,35 @@ def build_check():
     out = os.path.join(OUT, "harmonization-check.png")
     canvas.save(out); print("wrote", out, canvas.size)
 
+# ============================ shipped stills ============================
+# STILL-REST MODEL: these composites are no longer just gen pins — they ARE the frames the site
+# rests on (src/data/stations.ts `still`). Export them here so the shipped stills can never drift
+# from the pins the clip was generated between; regenerating the pins regenerates what ships.
+#
+# PNG masters stay in design/reshoot (lossless, and what Cinema Studio is fed). The web copies are
+# JPEG q94 at 4:4:4 — ~600KB vs ~2.4MB, which matters on a mobile-first, iOS-heavy entry screen.
+# subsampling=0 is NOT optional: the wordmark is saturated pink TYPE, and 4:2:0 would smear its
+# chroma edges into exactly the mush these stills exist to avoid.
+SHIP = {
+    "out0-composited.png": "entry-street.jpg",  # street rest  (wide storefront)
+    "out1-composited.png": "entry-door.jpg",    # door rest    (close storefront, held frame)
+}
+
+
+def export_shipped():
+    dest_dir = os.path.join(REPO, "public", "stills")
+    os.makedirs(dest_dir, exist_ok=True)
+    print("\n=== shipped stills (public/stills) ===")
+    for src_name, out_name in SHIP.items():
+        src = os.path.join(OUT, src_name)
+        dst = os.path.join(dest_dir, out_name)
+        im = Image.open(src).convert("RGB")
+        assert im.size == (1920, 1080), im.size
+        im.save(dst, "JPEG", quality=94, subsampling=0, optimize=True, progressive=True)
+        print(f"  {src_name} -> public/stills/{out_name}  "
+              f"({os.path.getsize(src)/1e6:.2f}MB PNG -> {os.path.getsize(dst)/1e3:.0f}KB JPEG)")
+
+
 if __name__ == "__main__":
     rec1, rec0 = [], []
     build_out1(harmonize=True, rec=rec1, save=True)
@@ -390,3 +419,4 @@ if __name__ == "__main__":
     print_records("out0", rec0)
     verify_geometry()
     build_check()
+    export_shipped()
