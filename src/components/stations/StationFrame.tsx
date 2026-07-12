@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRef } from "react";
 import type {
   Station,
   StationExit,
@@ -8,7 +9,24 @@ import type {
   TransitionAsset,
 } from "@/data/stations";
 import { StationTransition } from "./StationTransition";
+import { StationElementLayer } from "./StationElementLayer";
+import { useTransitionPhase } from "./useTransitionPhase";
 import { usePlaybackUnlock } from "./PlaybackUnlock";
+
+// The two entry stations carry the door-layer element overlay (the crisp marks that cover the
+// walk-up's soft baked twins). Keyed off the station id — the walls have no such layer.
+const STREET_ID: StationId = "street";
+const DOOR_ID: StationId = "door";
+
+// The overlay only makes sense over the WALK-UP, whose frame 0 IS the street's still. Arriving
+// at the door from the counter plays the reversed interior clip instead — it opens inside the
+// store, where street-placed marks would be nonsense — so the street set is gated on this edge.
+const WALKUP_CLIP = "/transitions/street-door/";
+
+// Fade choreography. Out is quicker than in: the marks must be GONE before the facade has
+// visibly moved (they're pinned to frame 0 and would smear), whereas the arrival can settle.
+const FADE_OUT_MS = 150;
+const FADE_IN_MS = 250;
 
 // Fixed edge safe zones for directional exit CTAs, keyed by StationExit.direction. ONE shared
 // map for every station; the scene copy (lower-left, bounded) is positioned to clear all of
@@ -73,6 +91,31 @@ export function StationFrame({
   const isActive = index === activeIndex;
   const { markUnlocked } = usePlaybackUnlock();
 
+  // Element-overlay wiring (entry stations only). `phase` watches THIS station's <video> from
+  // the outside — the engine owns playback and stays untouched (see useTransitionPhase).
+  const sectionRef = useRef<HTMLElement>(null);
+  const phase = useTransitionPhase(sectionRef);
+
+  const isStreet = station.id === STREET_ID;
+  const isDoor = station.id === DOOR_ID;
+  // Is the clip playing into the door the street→door walk-up (vs the counter→door reverse)?
+  const isWalkUpEdge = Boolean(asset?.h264Src?.startsWith(WALKUP_CLIP));
+
+  // The OPEN sign is a diegetic CTA: it fires the door's own forward exit rather than a
+  // hard-coded target, so it can never desync from the button it doubles (stations.ts is the
+  // single source of the nav graph). The <button> CTAs stay exactly as they were — this is an
+  // ADDITIONAL trigger, not a replacement.
+  const signExit = isDoor
+    ? station.exits?.find((e) => e.direction === "forward")
+    : undefined;
+
+  // STREET SET on the door station: the walk-up opens on frame 0 = the street's still, so the
+  // crisp street marks carry across the (instant) scene swap and then DIP OUT as motion starts.
+  // Without this the swap would pop crisp→soft, and the 150ms fade would be invisible: the
+  // street's own section snaps to opacity 0 (street→door is not a crossfade edge), taking its
+  // overlay with it before any fade could play.
+  const showStreetSetOnDoor = isDoor && isWalkUpEdge && phase !== "playing" && phase !== "ended";
+
   // Visibility/stacking. `transition-opacity` is ALWAYS present so the crossfade animates
   // reliably (the property pre-exists; only the duration changes). Normal swaps use
   // `duration-0` → instant, byte-identical to the old hard snap; a crossfade role uses ~450ms.
@@ -88,6 +131,7 @@ export function StationFrame({
 
   return (
     <section
+      ref={sectionRef}
       id={station.id}
       data-station={station.id}
       inert={!isActive}
@@ -124,6 +168,42 @@ export function StationFrame({
           </div>
         </div>
       )}
+
+      {/* 1b. ELEMENT LAYER — the crisp door-layer marks, pinned to the object-cover box of the
+          frame BELOW them (not the viewport), so they stay glued to the facade at any aspect.
+          Entry stations only; it sits UNDER the scrim and the DOM layer, because these marks
+          are part of the scene (paint on the glass), not part of the UI. */}
+      {isStreet ? (
+        // The street rests on its still — the marks are simply there, crisp, at rest.
+        <StationElementLayer set="street" visible={isActive} fadeMs={FADE_OUT_MS} />
+      ) : null}
+
+      {isDoor ? (
+        <>
+          {/* Carried across the swap on frame 0, then dips out as the walk-up starts moving. */}
+          <StationElementLayer
+            set="street"
+            visible={showStreetSetOnDoor}
+            fadeMs={FADE_OUT_MS}
+          />
+          {/* THE HOLD: the clip has ended and the facade is still — land the crisp marks on
+              top of their soft baked twins. Both inbound edges (the walk-up and the counter→
+              door reverse) end on the SAME held frame, so one placement set serves both. */}
+          <StationElementLayer
+            set="door"
+            visible={phase === "ended"}
+            fadeMs={FADE_IN_MS}
+            onSignClick={
+              signExit
+                ? () => {
+                    markUnlocked();
+                    goToId(signExit.to);
+                  }
+                : undefined
+            }
+          />
+        </>
+      ) : null}
 
       {/* scrim so DOM text stays readable over the video */}
       <div
