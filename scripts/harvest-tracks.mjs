@@ -45,6 +45,7 @@ const TARGET_SETS = [
   { scId: "1526138", wall: "mixes", parentSet: "Live Records by al b" },
   { scId: "2059410711", wall: "crate", parentSet: "Edits by al b" },
   { scId: "1096372", wall: "crate", parentSet: "Remixes/Production by al b" },
+  { scId: "2058781242", wall: "mixes", parentSet: "Tapes by al b" },
 ];
 
 // ── HTTP helpers (native fetch, 2 attempts) ─────────────────────────────────
