@@ -155,9 +155,10 @@ export function StoreHud({
 
   return (
     <>
-      {/* Wordmark TR — INTERIOR ONLY (the storefront's baked brand carries the entry scenes). */}
+      {/* Wordmark TR — INTERIOR ONLY (the storefront's baked brand carries the entry scenes).
+          Off-16:9 it floors 58px from the RIGHT (its designed inset), not jammed to the glass. */}
       {!isEntry ? (
-        <StagePinned x={1666} y={44} w={196} h={21} z={30}>
+        <StagePinned x={1666} y={44} w={196} h={21} z={30} margin={{ right: 58 }}>
           <img
             src="/hud/chunky-wordmark.png"
             alt="chunkylabs"
@@ -172,8 +173,17 @@ export function StoreHud({
         </StagePinned>
       ) : null}
 
-      {/* Nav puck BL — idle-fades; any pointer activity over it restores. */}
-      <StagePinned x={58} y={922} w={100} h={100} z={31} style={{ pointerEvents: "auto" }}>
+      {/* Nav puck BL — idle-fades; any pointer activity over it restores. Off-16:9 it floors 58px
+          from the LEFT (its designed inset), not jammed to the glass. */}
+      <StagePinned
+        x={58}
+        y={922}
+        w={100}
+        h={100}
+        z={31}
+        margin={{ left: 58 }}
+        style={{ pointerEvents: "auto" }}
+      >
         <div
           onMouseEnter={bump}
           onMouseMove={bump}
@@ -183,8 +193,9 @@ export function StoreHud({
         </div>
       </StagePinned>
 
-      {/* Room title under the puck — centred on the puck's vertical axis. */}
-      <StagePinned x={58} y={1030} w={100} h={20} z={31}>
+      {/* Room title under the puck — centred on the puck's vertical axis; follows the puck's left
+          floor so it stays under it off-16:9. */}
+      <StagePinned x={58} y={1030} w={100} h={20} z={31} margin={{ left: 58 }}>
         <div
           style={{
             color: "#fff",
@@ -202,9 +213,10 @@ export function StoreHud({
         </div>
       </StagePinned>
 
-      {/* One-time key hint, to the right of the puck; gone after the first move, that session. */}
+      {/* One-time key hint, to the right of the puck; gone after the first move, that session.
+          Floors at its own left inset (172) so it never slides under the puck off-16:9. */}
       {showHint ? (
-        <StagePinned x={172} y={958} w={200} h={16} z={31}>
+        <StagePinned x={172} y={958} w={200} h={16} z={31} margin={{ left: 172 }}>
           <div
             style={{
               color: C.muted,

@@ -62,6 +62,13 @@ export interface WallConfig {
   /** Room title under the nav pad, and the nav-pad "here" highlight. */
   roomTitle: string;
   navCurrent: "mixes" | "vibes" | "crate";
+  /**
+   * Canonical REST still — the EXACT frame the S0 arrangement was pinned against. Rendered
+   * full-stage (object-cover, WallStage mapping) as the BOTTOM of the content stack, so the covers
+   * occlude an IDENTICAL background on every arrival route. Each arrival clip holds slightly
+   * different framing; this does not — it kills the "covers sometimes off" intermittency.
+   */
+  restStill: string;
   /** Browse tabs (Mixes/Crate). Undefined → single list (Vibes). */
   tabs?: readonly WallTab[];
   defaultTabId?: string;
@@ -84,6 +91,7 @@ const MIXES_CONFIG: WallConfig = {
   stationId: "left-bins",
   roomTitle: "MIXES",
   navCurrent: "mixes",
+  restStill: "/transitions/mixes-counter/mixes-counter.poster.jpg",
   tabs: [
     { id: "mixes", label: "MIXES", items: MIXES, grammar: "transport" },
     { id: "live", label: "LIVE", items: LIVE, grammar: "transport" },
@@ -110,6 +118,7 @@ const VIBES_CONFIG: WallConfig = {
   stationId: "mixtape-shelf",
   roomTitle: "VIBES",
   navCurrent: "vibes",
+  restStill: "/transitions/vibes-crate/vibes-crate.poster.jpg",
   singleList: { items: VIBES, grammar: "spotify" },
   // 2×2, 172² slots, ZERO rotation — Pen frame fTdrZ (matches the frozen spec exactly).
   featured: [
@@ -128,6 +137,7 @@ const CRATE_CONFIG: WallConfig = {
   stationId: "right-bins",
   roomTitle: "CRATE",
   navCurrent: "crate",
+  restStill: "/transitions/crate-counter/crate-counter.poster.jpg",
   tabs: [
     { id: "edits", label: "EDITS", items: EDITS, grammar: "transport" },
     { id: "releases", label: "RELEASES", items: RELEASES, grammar: "external" },

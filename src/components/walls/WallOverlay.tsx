@@ -111,9 +111,20 @@ export function WallOverlay({
 
   return (
     <>
-      {/* REST covers — EXACT stage pin, MOUNTED in every state (panel/card sits over them). */}
+      {/* REST covers — EXACT stage pin, MOUNTED in every state (panel/card sits over them). The
+          canonical rest still is the BOTTOM of the stack: it fades in WITH the covers (same group)
+          and dissolves with them before any tween, so the covers occlude an identical background on
+          every arrival route while transitions still play against the clean video. */}
       <WallStage>
         <Fade shown={shown} delay={120}>
+          <img
+            src={config.restStill}
+            alt=""
+            aria-hidden
+            draggable={false}
+            className="pointer-events-none absolute inset-0"
+            style={{ width: "100%", height: "100%", objectFit: "cover", zIndex: 0 }}
+          />
           <RestLayer
             config={config}
             onSelectItem={(item) => openDetail(item, "rest")}
