@@ -12,7 +12,16 @@
  */
 
 import type { StationId } from "@/data/stations";
-import { LIVE, MIXES, MIXES_PLAYLISTS, TAPES, VIBES, type WallItem } from "@/data/catalog";
+import {
+  EDITS,
+  LIVE,
+  MIXES,
+  MIXES_PLAYLISTS,
+  RELEASES,
+  TAPES,
+  VIBES,
+  type WallItem,
+} from "@/data/catalog";
 
 /** A featured cover on the wall (rest treatment, plain). Design-space px. */
 export interface Slot {
@@ -114,11 +123,36 @@ const VIBES_CONFIG: WallConfig = {
   sleeveInset: 4,
 };
 
-// Crate (right-bins) config lands in the next milestone commit.
+// --- CRATE (right-bins) -----------------------------------------------------------------------
+const CRATE_CONFIG: WallConfig = {
+  stationId: "right-bins",
+  roomTitle: "CRATE",
+  navCurrent: "crate",
+  tabs: [
+    { id: "edits", label: "EDITS", items: EDITS, grammar: "transport" },
+    { id: "releases", label: "RELEASES", items: RELEASES, grammar: "external" },
+  ],
+  defaultTabId: "edits",
+  // Edits spine, 125² — Pen frame ZCOog.
+  featured: [
+    { itemId: "frankie-knuckles-workout-al-b-s-fk-always-edit", x: 718, y: 52, w: 125, h: 125 },
+    { itemId: "gaz-nevada-i-c-love-affair-al-b-s-rapless-edit", x: 718, y: 212, w: 125, h: 125 },
+    { itemId: "grace-jones-love-on-top-of-love-al-b-s-endless-dub-edit", x: 720, y: 371, w: 125, h: 125 },
+  ],
+  // Bin row — binclips (bottom clipped at the lip; 24px shadow margin; 133/131² sleeve).
+  bins: [
+    { itemId: "the-carry-nation-house-like-this-al-b-s-bitches-before-snitc", frameX: 790, frameY: 591, frameW: 181, frameH: 87, inset: 24, sleeve: 133 },
+    { itemId: "escandalo-nocturning-al-b-and-garito-s-cold-d-remix-bagpak-s", frameX: 943, frameY: 591, frameW: 181, frameH: 87, inset: 24, sleeve: 133 },
+    { itemId: "celia-and-johnny-quimbara-al-b-s-azucar-edit", frameX: 1095, frameY: 589, frameW: 177, frameH: 90, inset: 24, sleeve: 131 },
+  ],
+  // INTERIM: 4th edits-spine slot as the S0→BROWSE trigger.
+  viewAll: { itemId: "__view_all__", x: 718, y: 531, w: 125, h: 125 },
+};
 
 export const WALL_CONFIGS: Readonly<Record<string, WallConfig>> = {
   "left-bins": MIXES_CONFIG,
   "mixtape-shelf": VIBES_CONFIG,
+  "right-bins": CRATE_CONFIG,
 };
 
 export function getWallConfig(stationId: StationId): WallConfig | undefined {
