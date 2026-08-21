@@ -181,8 +181,11 @@ export function SoundCloudProvider({
         w.bind(E.PLAY, () => setIsPlaying(true));
         w.bind(E.PAUSE, () => setIsPlaying(false));
         w.bind(E.FINISH, () => {
+          // Track ended → the persistent player dissolves (current cleared).
           setIsPlaying(false);
           setPositionMs(0);
+          setDurationMs(0);
+          setCurrentBoth(null);
         });
         w.bind(E.PLAY_PROGRESS, (d) => {
           const p = (d as { currentPosition?: number } | undefined)?.currentPosition;

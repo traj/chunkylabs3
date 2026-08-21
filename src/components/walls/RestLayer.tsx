@@ -79,7 +79,7 @@ export function RestLayer({
           height: config.viewAll.h,
         }}
       >
-        <ViewAllCard size={config.viewAll.w} onClick={onViewAll} />
+        <ViewAllCard size={config.viewAll.w} sleeveInset={inset} onClick={onViewAll} />
       </div>
     </div>
   );

@@ -9,43 +9,61 @@ import {
   type StationId,
   type TransitionAsset,
 } from "@/data/stations";
+import { MIXES } from "@/data/catalog";
 import { StationFrame } from "@/components/stations/StationFrame";
 import { PlaybackUnlockProvider } from "@/components/stations/PlaybackUnlock";
+import { SoundCloudProvider } from "@/components/walls/soundcloud";
 import { StoreHud } from "@/components/nav/StoreHud";
+import { StorePlayer } from "@/components/nav/StorePlayer";
 
 /**
  * Composes the stations and makes the visit navigable — entry (street/door) by diegetic hotspots,
- * interior (counter + walls) by the nav puck (StoreHud) and arrow/WASD keys. Both funnel through
- * `requestMove`, a tween-aware wrapper over the original click-nav: during a transition it queues
- * AT MOST ONE move and drops the rest, then plays the queued move when the clip's duration elapses.
+ * interior (counter + walls) by the nav puck. FULL COMPASS: every OTHER room is reachable from any
+ * interior station in one press — a direct edge where one exists, otherwise the engine's circular
+ * route chained at runtime (glue only, e.g. Mixes→Vibes→Crate). requestMove drives it as a route:
+ * it plays each hop, continues to the final target when a hop ends, and queues AT MOST ONE further
+ * press to run after the route completes.
  *
- * Decoder windowing: only the active scene and its two neighbours (active±1) are mounted.
+ * The SoundCloud engine + player live HERE (store level) so playback + the player persist across
+ * every navigation. Decoder windowing: only active±1 scenes are mounted.
  */
 
 const KEEP_WINDOW = 1;
-
-// Directed edges that CROSSFADE the scene swap (~450ms opacity dissolve) — only clip-less returns.
 const CROSSFADE_EDGES = new Set<string>(["door->street", "counter->street"]);
-
 const stationIndex = (id: StationId) => STATIONS.findIndex((s) => s.id === id);
+const ROOMS: readonly StationId[] = ["counter", "left-bins", "right-bins", "mixtape-shelf"];
+
+/** A single resolvable move (direct/express/reverse/forward — all are exits entries). */
+function hasEdge(from: StationId, to: StationId): boolean {
+  return (STATIONS[stationIndex(from)].exits ?? []).some((e) => e.to === to);
+}
+
+/** The hop sequence from `from` to `to`: [to] if adjacent, else circle via an intermediate. */
+function routeTo(from: StationId, to: StationId): StationId[] {
+  if (from === to) return [];
+  if (hasEdge(from, to)) return [to];
+  for (const mid of ["mixtape-shelf", "counter"] as StationId[]) {
+    if (mid !== from && mid !== to && hasEdge(from, mid) && hasEdge(mid, to)) return [mid, to];
+  }
+  return [to]; // last resort — a single hop, resolveTransition falls back to the dest clip
+}
 
 export function StoreWalkthrough() {
   const lenis = useLenis();
   const [active, setActive] = useState(0);
   const [cameFrom, setCameFrom] = useState<StationId | null>(null);
   const [expressAsset, setExpressAsset] = useState<TransitionAsset | null>(null);
+  const [keyHintDismissed, setKeyHintDismissed] = useState(false);
+  const [activeAtRest, setActiveAtRest] = useState(false);
 
-  // Tween-queue state (refs so the timed release reads the latest values, not a stale closure).
+  // Route state (refs so the timed hop-release reads the latest values).
   const activeRef = useRef(0);
   const tweeningRef = useRef(false);
-  const queuedRef = useRef<StationId | null>(null);
+  const finalTargetRef = useRef<StationId | null>(null);
+  const queuedTargetRef = useRef<StationId | null>(null);
+  const requestMoveRef = useRef<(to: StationId) => void>(() => {});
+  const stepRef = useRef<() => void>(() => {});
 
-  // Wall BROWSE/DETAIL open on the active wall → puck movement is suspended (Esc still walks).
-  const [wallStateOpen, setWallStateOpen] = useState(false);
-  // First-mount key hint, dismissed on the first successful move for the rest of the session.
-  const [keyHintDismissed, setKeyHintDismissed] = useState(false);
-
-  // /store is true zero-scroll. Lenis is a global root provider; stop it while /store is mounted.
   useEffect(() => {
     lenis?.stop();
     const html = document.documentElement;
@@ -57,11 +75,10 @@ export function StoreWalkthrough() {
     };
   }, [lenis]);
 
-  // De-flash cold-mounted exit targets: warm the reachable stations' posters into the image cache.
+  // Warm the reachable stations' posters into the image cache (de-flash cold mounts).
   useEffect(() => {
-    const activeStation = STATIONS[active];
-    const posters = (activeStation.exits ?? [])
-      .map((exit) => resolveTransition(activeStation.id, exit.to)?.poster)
+    const posters = (STATIONS[active].exits ?? [])
+      .map((exit) => resolveTransition(STATIONS[active].id, exit.to)?.poster)
       .filter((p): p is string => Boolean(p));
     for (const src of posters) {
       const img = new Image();
@@ -69,42 +86,59 @@ export function StoreWalkthrough() {
     }
   }, [active]);
 
-  const requestMoveRef = useRef<(to: StationId) => void>(() => {});
-
-  const applyMove = useCallback((to: StationId) => {
+  const applyHop = useCallback((to: StationId) => {
     const cur = activeRef.current;
     const idx = stationIndex(to);
     if (idx === -1 || idx === cur) return;
     const fromId = STATIONS[cur].id;
-    // Chained-express edges (counter↔Vibes) roll a side 50/50 per trip.
     const express = EXPRESS_EDGES[`${fromId}->${to}`];
     setExpressAsset(express ? express[Math.random() < 0.5 ? 0 : 1] : null);
     setCameFrom(fromId);
     activeRef.current = idx;
     setActive(idx);
-    // Lock further moves for the clip's duration; release the one queued move (if any) after.
     const asset = resolveTransition(fromId, to);
     const durMs = Math.max(300, (asset?.durationSec ?? 0.5) * 1000);
     tweeningRef.current = true;
     window.setTimeout(() => {
       tweeningRef.current = false;
-      const q = queuedRef.current;
-      queuedRef.current = null;
-      if (q) requestMoveRef.current(q);
+      const final = finalTargetRef.current;
+      if (final && activeRef.current !== stationIndex(final)) {
+        stepRef.current(); // continue the route
+      } else {
+        finalTargetRef.current = null;
+        const q = queuedTargetRef.current;
+        queuedTargetRef.current = null;
+        if (q) requestMoveRef.current(q);
+      }
     }, durMs);
   }, []);
 
+  const step = useCallback(() => {
+    const final = finalTargetRef.current;
+    if (!final) return;
+    const route = routeTo(STATIONS[activeRef.current].id, final);
+    if (route.length === 0) {
+      finalTargetRef.current = null;
+      return;
+    }
+    applyHop(route[0]);
+  }, [applyHop]);
+  useEffect(() => {
+    stepRef.current = step;
+  }, [step]);
+
   const requestMove = useCallback(
     (to: StationId) => {
-      if (stationIndex(to) === activeRef.current) return;
-      if (tweeningRef.current) {
-        // Queue AT MOST ONE: the first move during a tween is held; further presses are ignored.
-        if (queuedRef.current == null) queuedRef.current = to;
+      if (stationIndex(to) === activeRef.current && !finalTargetRef.current) return;
+      if (finalTargetRef.current) {
+        // Mid-route: queue AT MOST ONE further target; ignore the rest.
+        if (queuedTargetRef.current == null) queuedTargetRef.current = to;
         return;
       }
-      applyMove(to);
+      finalTargetRef.current = to;
+      step();
     },
-    [applyMove],
+    [step],
   );
   useEffect(() => {
     requestMoveRef.current = requestMove;
@@ -115,56 +149,63 @@ export function StoreWalkthrough() {
 
   const activeId = STATIONS[active].id;
   const isInterior = activeId !== "street" && activeId !== "door";
-  const reachable = useMemo(
-    () => new Set((STATIONS[active].exits ?? []).map((e) => e.to)),
-    [active],
-  );
+  // Full compass: all three OTHER rooms are live at every interior station; the street portal is
+  // live only where it is a direct edge (the counter).
+  const liveTargets = useMemo(() => {
+    const s = new Set(ROOMS.filter((r) => r !== activeId));
+    if (hasEdge(activeId, "street")) s.add("street");
+    return s;
+  }, [activeId]);
   const dismissKeyHint = useCallback(() => setKeyHintDismissed(true), []);
 
   return (
     <PlaybackUnlockProvider>
-      <main className="fixed inset-0 overflow-hidden bg-black">
-        {STATIONS.map((station, i) => {
-          if (Math.abs(i - active) > KEEP_WINDOW) return null;
-          const fromId = i === active ? cameFrom : STATIONS[active].id;
-          const asset =
-            i === active && expressAsset
-              ? expressAsset
-              : resolveTransition(fromId, station.id);
-          let crossfade: "in" | "out" | undefined;
-          if (crossfadeActive) {
-            if (i === active) crossfade = "in";
-            else if (station.id === cameFrom) crossfade = "out";
-          }
-          return (
-            <StationFrame
-              key={station.id}
-              station={station}
-              asset={asset}
-              index={i}
-              activeIndex={active}
-              goToId={requestMove}
-              crossfade={crossfade}
-              onWallStateChange={setWallStateOpen}
-            />
-          );
-        })}
+      {/* Store-level SoundCloud engine — playback + the player persist across every navigation. */}
+      <SoundCloudProvider primeUrl={MIXES[0]?.scUrl}>
+        <main className="fixed inset-0 overflow-hidden bg-black">
+          {STATIONS.map((station, i) => {
+            if (Math.abs(i - active) > KEEP_WINDOW) return null;
+            const fromId = i === active ? cameFrom : STATIONS[active].id;
+            const asset =
+              i === active && expressAsset ? expressAsset : resolveTransition(fromId, station.id);
+            let crossfade: "in" | "out" | undefined;
+            if (crossfadeActive) {
+              if (i === active) crossfade = "in";
+              else if (station.id === cameFrom) crossfade = "out";
+            }
+            return (
+              <StationFrame
+                key={station.id}
+                station={station}
+                asset={asset}
+                index={i}
+                activeIndex={active}
+                goToId={requestMove}
+                crossfade={crossfade}
+                onAtRestChange={setActiveAtRest}
+              />
+            );
+          })}
 
-        {/* Interior HUD + nav puck (never on street/door). Above the frames; click-through except
-            the puck itself. */}
-        {isInterior ? (
-          <div className="pointer-events-none absolute inset-0 z-40">
-            <StoreHud
-              currentId={activeId}
-              reachable={reachable}
-              onMove={requestMove}
-              movementLocked={wallStateOpen}
-              keyHintDismissed={keyHintDismissed}
-              onDismissKeyHint={dismissKeyHint}
-            />
+          {/* Interior HUD + nav puck (never on street/door). */}
+          {isInterior ? (
+            <div className="pointer-events-none absolute inset-0 z-40">
+              <StoreHud
+                currentId={activeId}
+                reachable={liveTargets}
+                onMove={requestMove}
+                keyHintDismissed={keyHintDismissed}
+                onDismissKeyHint={dismissKeyHint}
+              />
+            </div>
+          ) : null}
+
+          {/* Persistent player — above everything, on every station (music object, not HUD). */}
+          <div className="pointer-events-none absolute inset-0 z-50">
+            <StorePlayer atRest={activeAtRest} />
           </div>
-        ) : null}
-      </main>
+        </main>
+      </SoundCloudProvider>
     </PlaybackUnlockProvider>
   );
 }

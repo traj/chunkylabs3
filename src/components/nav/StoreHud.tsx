@@ -36,15 +36,12 @@ export function StoreHud({
   currentId,
   reachable,
   onMove,
-  movementLocked,
   keyHintDismissed,
   onDismissKeyHint,
 }: {
   currentId: StationId;
   reachable: ReadonlySet<StationId>;
   onMove: (to: StationId) => void;
-  /** True while a wall BROWSE/DETAIL panel is open — movement keys are ignored (Esc still walks). */
-  movementLocked: boolean;
   keyHintDismissed: boolean;
   onDismissKeyHint: () => void;
 }) {
@@ -83,18 +80,18 @@ export function StoreHud({
 
   const move = useCallback(
     (to: StationId) => {
-      if (movementLocked) return; // suspended while a wall BROWSE/DETAIL panel is open
+      // A direction always navigates now — a press with a wall panel open dissolves it and goes
+      // (item 2). Esc still walks back out without moving (handled per-wall).
       onDismissKeyHint();
       bump();
       onMove(to);
     },
-    [onMove, onDismissKeyHint, bump, movementLocked],
+    [onMove, onDismissKeyHint, bump],
   );
 
   // Arrow / WASD movement keys (ignored while a wall state is open; Esc is the wall walk, elsewhere).
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (movementLocked) return;
       const dir = KEY_TO_DIR[e.key.toLowerCase()];
       if (!dir) return;
       const target = DIR_TO_STATION[dir];
@@ -105,7 +102,7 @@ export function StoreHud({
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [movementLocked, reachable, currentId, move]);
+  }, [reachable, currentId, move]);
 
   const dim = idle ? 0.45 : 1;
   const showHint = !keyHintDismissed;
@@ -138,14 +135,17 @@ export function StoreHud({
         </div>
       </StagePinned>
 
-      {/* Room title under the puck — Archivo Black 12, white; idle-fades with the puck. */}
-      <StagePinned x={58} y={1030} w={220} h={20} z={31}>
+      {/* Room title under the puck — centered on the puck's vertical axis (box = puck x/width,
+          text-align centre). Archivo Black 12, white; idle-fades with the puck. */}
+      <StagePinned x={58} y={1030} w={100} h={20} z={31}>
         <div
           style={{
             color: "#fff",
             font: `400 12px ${FONT.display}`,
             letterSpacing: ".02em",
             textTransform: "uppercase",
+            textAlign: "center",
+            width: "100%",
             opacity: dim,
             transition: "opacity .5s ease",
             whiteSpace: "nowrap",

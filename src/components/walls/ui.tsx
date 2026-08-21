@@ -184,12 +184,16 @@ export function BinclipCover({
  */
 export function ViewAllCard({
   size,
+  sleeveInset = 0,
   onClick,
 }: {
   size: number;
+  /** Slot is `size`; the card renders `size - 2*inset` (matches the sibling covers' sleeve). */
+  sleeveInset?: number;
   onClick: () => void;
 }) {
   const [hover, setHover] = useState(false);
+  const sleeve = size - 2 * sleeveInset;
   return (
     <button
       type="button"
@@ -201,14 +205,15 @@ export function ViewAllCard({
       aria-label="View all"
       style={{
         position: "absolute",
-        left: 0,
-        top: 0,
-        width: size,
-        height: size,
+        left: sleeveInset,
+        top: sleeveInset,
+        width: sleeve,
+        height: sleeve,
         border: 0,
         borderRadius: 0,
-        background: C.cream,
-        color: C.ink,
+        // INTERIM gradient (final design belongs to the sticker-wall pass).
+        background: "linear-gradient(135deg, #FF4D63 0%, #C9954F 45%, #4B2EA0 100%)",
+        color: C.cream,
         cursor: "pointer",
         display: "flex",
         alignItems: "center",
@@ -216,7 +221,7 @@ export function ViewAllCard({
         transform: `translateY(${hover ? -2.5 : 0}px)`,
         transition: "transform .18s ease, box-shadow .18s ease",
         boxShadow: hover ? HOVER_SHADOW : `${REST_RING}, ${REST_SHADOW}`,
-        font: `700 ${Math.round(size * 0.11)}px ${FONT.mono}`,
+        font: `700 ${Math.round(sleeve * 0.11)}px ${FONT.mono}`,
         letterSpacing: ".14em",
       }}
     >
