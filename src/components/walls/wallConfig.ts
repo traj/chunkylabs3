@@ -12,7 +12,7 @@
  */
 
 import type { StationId } from "@/data/stations";
-import { LIVE, MIXES, MIXES_PLAYLISTS, TAPES, type WallItem } from "@/data/catalog";
+import { LIVE, MIXES, MIXES_PLAYLISTS, TAPES, VIBES, type WallItem } from "@/data/catalog";
 
 /** A featured cover on the wall (rest treatment, plain). Design-space px. */
 export interface Slot {
@@ -96,10 +96,29 @@ const MIXES_CONFIG: WallConfig = {
   viewAll: { itemId: "__view_all__", x: 365, y: 380, w: 104, h: 104 },
 };
 
-// Vibes (mixtape-shelf) and Crate (right-bins) configs land in the following milestone commits.
+// --- VIBES (mixtape-shelf) --------------------------------------------------------------------
+const VIBES_CONFIG: WallConfig = {
+  stationId: "mixtape-shelf",
+  roomTitle: "VIBES",
+  navCurrent: "vibes",
+  singleList: { items: VIBES, grammar: "spotify" },
+  // 2×2, 172² slots, ZERO rotation — Pen frame fTdrZ (matches the frozen spec exactly).
+  featured: [
+    { itemId: "vibes-12", x: 546, y: 43, w: 172, h: 172 },
+    { itemId: "vibes-01", x: 746, y: 44, w: 172, h: 172 },
+    { itemId: "vibes-07", x: 547, y: 238, w: 172, h: 172 },
+    { itemId: "vibes-18", x: 746, y: 241, w: 172, h: 172 },
+  ],
+  viewAll: { itemId: "__view_all__", x: 746, y: 434, w: 172, h: 172 },
+  featuredSkipsToDetail: true,
+  sleeveInset: 4,
+};
+
+// Crate (right-bins) config lands in the next milestone commit.
 
 export const WALL_CONFIGS: Readonly<Record<string, WallConfig>> = {
   "left-bins": MIXES_CONFIG,
+  "mixtape-shelf": VIBES_CONFIG,
 };
 
 export function getWallConfig(stationId: StationId): WallConfig | undefined {
