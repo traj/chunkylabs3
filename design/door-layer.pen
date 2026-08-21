@@ -1,5 +1,5 @@
 {
-  "version": "2.14",
+  "version": "2.17",
   "children": [
     {
       "type": "frame",
@@ -85,36 +85,6 @@
           "strokeWidth": 3
         },
         {
-          "type": "note",
-          "id": "Ehh0o",
-          "x": 64,
-          "y": 1030,
-          "name": "note-portrait-safezone",
-          "width": 360,
-          "height": 0,
-          "content": "portrait safe-zone · 9:16 object-cover center column"
-        },
-        {
-          "type": "note",
-          "id": "cQIQp",
-          "x": 420,
-          "y": 1043,
-          "name": "note-open-hover",
-          "width": 360,
-          "height": 0,
-          "content": "entry CTA — hover: glow intensifies"
-        },
-        {
-          "type": "note",
-          "id": "a2oEPl",
-          "x": 1491,
-          "y": 1038,
-          "name": "note-wordmark-portrait",
-          "width": 360,
-          "height": 0,
-          "content": "wordmark — portrait: relocates to center column above door"
-        },
-        {
           "type": "rectangle",
           "id": "Ve5Sr",
           "x": 969,
@@ -161,6 +131,478 @@
           "height": 119
         }
       ]
+    },
+    {
+      "type": "note",
+      "id": "cQIQp",
+      "x": 435,
+      "y": 1113,
+      "name": "note-open-hover",
+      "width": 360,
+      "height": 0,
+      "content": "entry CTA — hover: glow intensifies"
+    },
+    {
+      "type": "note",
+      "id": "Ehh0o",
+      "x": 29,
+      "y": 1113,
+      "name": "note-portrait-safezone",
+      "width": 360,
+      "height": 0,
+      "content": "portrait safe-zone · 9:16 object-cover center column"
+    },
+    {
+      "type": "note",
+      "id": "a2oEPl",
+      "x": 1387,
+      "y": 1120,
+      "name": "note-wordmark-portrait",
+      "width": 360,
+      "height": 0,
+      "content": "wordmark — portrait: relocates to center column above door"
+    },
+    {
+      "type": "frame",
+      "id": "CKkp3",
+      "x": 2040,
+      "y": 0,
+      "name": "mixes-state0-arrangement",
+      "clip": true,
+      "width": 1920,
+      "height": 1080,
+      "fill": {
+        "type": "image",
+        "enabled": true,
+        "url": "plates/plate-mixes.png",
+        "mode": "fill"
+      },
+      "layout": "none",
+      "children": [
+        {
+          "type": "rectangle",
+          "id": "N1zlxc",
+          "x": -6,
+          "y": -10,
+          "name": "scrim-shipped",
+          "fill": {
+            "type": "gradient",
+            "gradientType": "linear",
+            "enabled": true,
+            "rotation": 0,
+            "size": {
+              "height": 1
+            },
+            "colors": [
+              {
+                "color": "#000000B3",
+                "position": 0
+              },
+              {
+                "color": "#00000033",
+                "position": 0.5
+              },
+              {
+                "color": "#00000066",
+                "position": 1
+              }
+            ]
+          },
+          "width": 1920,
+          "height": 1080
+        },
+        {
+          "type": "rectangle",
+          "id": "Ebo4M",
+          "x": 488,
+          "y": 380,
+          "name": "display-live-in-bk",
+          "fill": [
+            {
+              "type": "image",
+              "enabled": true,
+              "url": "../content/harvest/art/tracks/live-in-bk-2019.jpg",
+              "mode": "fill"
+            },
+            {
+              "type": "color",
+              "color": "#F5923A4D",
+              "enabled": true,
+              "blendMode": "multiply"
+            }
+          ],
+          "width": 104,
+          "height": 104,
+          "stroke": "#FFFFFF",
+          "strokeWidth": 2,
+          "strokeAlignment": "outer",
+          "effect": {
+            "type": "shadow",
+            "shadowType": "outer",
+            "color": "#241200B3",
+            "offset": {
+              "x": 0,
+              "y": 4
+            },
+            "blur": 14,
+            "spread": 3
+          }
+        },
+        {
+          "type": "frame",
+          "id": "hqL4U",
+          "x": 243,
+          "y": 380,
+          "name": "display-salsa-01",
+          "rotation": -0.58,
+          "width": 104,
+          "height": 104,
+          "layout": "none",
+          "children": [
+            {
+              "type": "rectangle",
+              "id": "w01t1g",
+              "x": 0,
+              "y": 0,
+              "name": "sleeve-salsa-01",
+              "fill": [
+                {
+                  "type": "image",
+                  "enabled": true,
+                  "url": "../content/harvest/art/tracks/salsa-01-2002.jpg",
+                  "mode": "fill"
+                },
+                {
+                  "type": "color",
+                  "color": "#F5923A4D",
+                  "enabled": true,
+                  "blendMode": "multiply"
+                }
+              ],
+              "width": 104,
+              "height": 104,
+              "stroke": "#FFFFFF",
+              "strokeWidth": 2,
+              "strokeAlignment": "outer",
+              "effect": {
+                "type": "shadow",
+                "shadowType": "outer",
+                "color": "#241200B3",
+                "offset": {
+                  "x": 0,
+                  "y": 4
+                },
+                "blur": 14,
+                "spread": 3
+              }
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "Z4vGcz",
+          "x": 490,
+          "y": 261,
+          "name": "slot-jan2k",
+          "rotation": -0.34,
+          "width": 104,
+          "height": 104,
+          "layout": "none",
+          "children": [
+            {
+              "type": "rectangle",
+              "id": "M10eZL",
+              "x": 0,
+              "y": 0,
+              "name": "sleeve-jan2k",
+              "fill": [
+                {
+                  "type": "image",
+                  "enabled": true,
+                  "url": "../content/harvest/art/tracks/jan2k.jpg",
+                  "mode": "fill"
+                },
+                {
+                  "type": "color",
+                  "color": "#FF9E3A33",
+                  "enabled": true,
+                  "blendMode": "multiply"
+                }
+              ],
+              "width": 104,
+              "height": 104,
+              "stroke": "#FFFFFF",
+              "strokeWidth": 2,
+              "strokeAlignment": "outer",
+              "effect": {
+                "type": "shadow",
+                "shadowType": "outer",
+                "color": "#241200B3",
+                "offset": {
+                  "x": 0,
+                  "y": 4
+                },
+                "blur": 14,
+                "spread": 3
+              }
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "PfMGz",
+          "x": 365,
+          "y": 261,
+          "name": "display-storm",
+          "width": 104,
+          "height": 104,
+          "layout": "none",
+          "children": [
+            {
+              "type": "rectangle",
+              "id": "Y05HG",
+              "x": 0,
+              "y": 0,
+              "name": "sleeve-storm",
+              "fill": [
+                {
+                  "type": "image",
+                  "enabled": true,
+                  "url": "../content/harvest/art/tracks/storm.jpg",
+                  "mode": "fill"
+                },
+                {
+                  "type": "color",
+                  "color": "#F5923A4D",
+                  "enabled": true,
+                  "blendMode": "multiply"
+                }
+              ],
+              "width": 104,
+              "height": 104,
+              "stroke": "#FFFFFF",
+              "strokeWidth": 2,
+              "strokeAlignment": "outer",
+              "effect": {
+                "type": "shadow",
+                "shadowType": "outer",
+                "color": "#241200B3",
+                "offset": {
+                  "x": 0,
+                  "y": 4
+                },
+                "blur": 14,
+                "spread": 3
+              }
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "f3jXZd",
+          "x": 240,
+          "y": 261,
+          "name": "display-housetape-2025",
+          "width": 104,
+          "height": 104,
+          "layout": "none",
+          "children": [
+            {
+              "type": "rectangle",
+              "id": "SbaHp",
+              "x": 0,
+              "y": 0,
+              "name": "sleeve-housetape-2025",
+              "fill": [
+                {
+                  "type": "image",
+                  "enabled": true,
+                  "url": "../content/harvest/art/tracks/housetape-2025.jpg",
+                  "mode": "fill"
+                },
+                {
+                  "type": "color",
+                  "color": "#F5923A4D",
+                  "enabled": true,
+                  "blendMode": "multiply"
+                }
+              ],
+              "width": 104,
+              "height": 104,
+              "stroke": "#FFFFFF",
+              "strokeWidth": 2,
+              "strokeAlignment": "outer",
+              "effect": {
+                "type": "shadow",
+                "shadowType": "outer",
+                "color": "#241200B3",
+                "offset": {
+                  "x": 0,
+                  "y": 4
+                },
+                "blur": 14,
+                "spread": 3
+              }
+            }
+          ]
+        },
+        {
+          "type": "rectangle",
+          "id": "s7W1V",
+          "x": 489,
+          "y": 142,
+          "name": "display-age-of-love",
+          "fill": [
+            {
+              "type": "image",
+              "enabled": true,
+              "url": "../content/harvest/art/tracks/age-of-love-mix.jpg",
+              "mode": "fill"
+            },
+            {
+              "type": "color",
+              "color": "#F5923A4D",
+              "enabled": true,
+              "blendMode": "multiply"
+            }
+          ],
+          "width": 104,
+          "height": 104,
+          "stroke": "#FFFFFF",
+          "strokeWidth": 2,
+          "strokeAlignment": "outer",
+          "effect": {
+            "type": "shadow",
+            "shadowType": "outer",
+            "color": "#241200B3",
+            "offset": {
+              "x": 0,
+              "y": 4
+            },
+            "blur": 14,
+            "spread": 3
+          }
+        },
+        {
+          "type": "frame",
+          "id": "XSFD9",
+          "x": 366,
+          "y": 142,
+          "name": "slot-sugar-cookies-1",
+          "width": 104,
+          "height": 104,
+          "layout": "none",
+          "children": [
+            {
+              "type": "rectangle",
+              "id": "ZabYO",
+              "x": 0,
+              "y": 0,
+              "name": "sleeve-sugar-cookies-1",
+              "fill": [
+                {
+                  "type": "image",
+                  "enabled": true,
+                  "url": "../content/harvest/art/tracks/sugar-cookies-volume-1.jpg",
+                  "mode": "fill"
+                },
+                {
+                  "type": "color",
+                  "color": "#FF9E3A33",
+                  "enabled": true,
+                  "blendMode": "multiply"
+                }
+              ],
+              "width": 104,
+              "height": 104,
+              "stroke": "#FFFFFF",
+              "strokeWidth": 2,
+              "strokeAlignment": "outer",
+              "effect": {
+                "type": "shadow",
+                "shadowType": "outer",
+                "color": "#241200B3",
+                "offset": {
+                  "x": 0,
+                  "y": 4
+                },
+                "blur": 14,
+                "spread": 3
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "VD9cU",
+      "x": 2040,
+      "y": 1200,
+      "name": "fx-diagnostic",
+      "width": 600,
+      "height": 300,
+      "fill": "#D9C9A8",
+      "layout": "none",
+      "children": [
+        {
+          "type": "rectangle",
+          "id": "tQVtD",
+          "x": 80,
+          "y": 80,
+          "name": "control-plain",
+          "fill": "#CC3355",
+          "width": 120,
+          "height": 120,
+          "effect": {
+            "type": "shadow",
+            "shadowType": "outer",
+            "color": "#000000E6",
+            "offset": {
+              "x": 0,
+              "y": 8
+            },
+            "blur": 24,
+            "spread": 6
+          }
+        },
+        {
+          "type": "rectangle",
+          "id": "StooC",
+          "x": 340,
+          "y": 80,
+          "name": "control-image",
+          "fill": {
+            "type": "image",
+            "enabled": true,
+            "url": "../content/harvest/art/tracks/housetape-2025.jpg",
+            "mode": "fill"
+          },
+          "width": 120,
+          "height": 120,
+          "effect": {
+            "type": "shadow",
+            "shadowType": "outer",
+            "color": "#000000E6",
+            "offset": {
+              "x": 0,
+              "y": 8
+            },
+            "blur": 24,
+            "spread": 6
+          }
+        }
+      ]
+    },
+    {
+      "type": "note",
+      "id": "OatEr",
+      "x": 2040,
+      "y": 1130,
+      "name": "note-treatment-map",
+      "width": 560,
+      "height": 40,
+      "content": "TREATMENT SAMPLER — top: sugar=white glow, heart=PINK glow | mid: housetape=1px white stroke, storm=2px stroke+shadow, jan2k=AMBER glow | bottom: salsa=dark shadow only, live-in-bk=5px cream frame"
     }
   ],
   "fileToken": "d366873a-c3e6-4897-8866-5c2a84d88082"
