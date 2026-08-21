@@ -1,0 +1,12 @@
+{
+  "_meta": {
+    "note": "Counter sticker-index collage inventory. Assets verified: real alpha, lettering intact (2026-08-21). shade asset currently lives at design/shade-sticker-trans.png (+ dupe in design/assets/) — BUILD TASK: copy into this folder as shade.png. hrefs marked PENDING need Al B.",
+    "placement": "Pen frame counter-index-insert (j1qN3L) = geometry source of truth; current seats are CD scatter pending founder drag pass."
+  },
+  "stickers": [
+    { "id": "shade", "label": "shade°", "asset": "/inserts/stickers/shade.png", "href": "https://shade.ninja", "kind": "brand", "newTab": true },
+    { "id": "ck-land", "label": "CK.LAND", "asset": "/inserts/stickers/ck-land.png", "href": "PENDING", "kind": "friend-business", "newTab": true },
+    { "id": "cut-loose", "label": "Cut Loose", "asset": "/inserts/stickers/cut-loose.png", "href": "PENDING", "kind": "friend-business", "newTab": true },
+    { "id": "il-posto-postcard", "label": "Sunday at Il Posto", "asset": "/inserts/stickers/il-posto-postcard.png", "href": "PENDING — ilpostoaccantonyc.com vs instagram.com/sundayatilpostofilm vs AppleTV film link (Al B call)", "kind": "friend-business", "newTab": true }
+  ]
+}

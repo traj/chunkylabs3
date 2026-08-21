@@ -1,0 +1,25 @@
+{
+  "_meta": {
+    "source": "harvested 2026-08-21 from chunkylabsnyc2/src/components/Updates.svelte (live site chunkylabs.nyc)",
+    "note": "REAL content, full history. headline = pad voice (CD-condensed, curation may edit). body = original site sentence, links stripped. internal targets use `internal` instead of href. Entries with no CTA are history items — keep them; deep pages ARE the archaeology.",
+    "pagination": "newest-first, 5-6 entries per page, all inputs map to page flips"
+  },
+  "updates": [
+    { "id": "u-2026-02-28", "date": "2026-02-28", "dateLabel": "02.28.26", "headline": "Vibes 18 just dropped", "href": "https://open.spotify.com/playlist/1a3ZlBowVT2CMfWjzm4hvT?si=47713d6ce17f4a37", "hrefLabel": "LISTEN", "internal": "vibes" },
+    { "id": "u-2025-10-03", "date": "2025-10-03", "dateLabel": "10.03.25", "headline": "Vibes 17 is out now", "href": "https://open.spotify.com/playlist/5cQWRRQwpwpezJY5RTfd2x?si=7be01c0084e34058", "hrefLabel": "LISTEN", "internal": "vibes" },
+    { "id": "u-2025-10-01", "date": "2025-10-01", "dateLabel": "10.01.25", "headline": "Sunday at Il Posto streaming", "body": "The \"Sunday at Il Posto\" film is now available for streaming on AppleTV.", "href": "https://tv.apple.com/us/movie/sunday-at-il-posto-accanto/umc.cmc.1xfqwzx9nn0w7ss8catxpohfp", "hrefLabel": "WATCH" },
+    { "id": "u-2025-07-22", "date": "2025-07-22", "dateLabel": "07.22.25", "headline": "Tapes added to the Spotlight", "body": "Various mix recordings from the 90's including some classic al b tapes as well as DJ's from those days.", "internal": "mixes/tapes", "hrefLabel": "DIG" },
+    { "id": "u-2024-12-20", "date": "2024-12-20", "dateLabel": "12.20.24", "headline": "Vibes 16 now available", "href": "https://open.spotify.com/playlist/0cm55dvJAy7rO7NJZi2cLI?si=5962a30248b54496", "hrefLabel": "LISTEN", "internal": "vibes" },
+    { "id": "u-2024-07-21", "date": "2024-07-21", "dateLabel": "07.21.24", "headline": "Block party in Greenpoint", "body": "Dobbins Street and Norman Street from 2pm on. DJ's al b and Ben Manzone." },
+    { "id": "u-2024-06-14", "date": "2024-06-14", "dateLabel": "06.14.24", "headline": "Housetape 2024 on SoundCloud", "href": "https://soundcloud.com/dj-al-b/housetape-2024", "hrefLabel": "LISTEN", "internal": "mixes" },
+    { "id": "u-2023-12-25", "date": "2023-12-25", "dateLabel": "12.25.23", "headline": "sancocho numero tres for the holidays", "body": "Enjoy some classic latin sounds this holiday.", "href": "https://open.spotify.com/playlist/0n3716q0T1PJSENPSYIevj?si=285854d9efc54608", "hrefLabel": "LISTEN" },
+    { "id": "u-2023-11-11", "date": "2023-11-11", "dateLabel": "11.11.23", "headline": "Vibes 15 now available", "href": "https://open.spotify.com/playlist/4NfaOvb8dMjjQ6BWHdxjGO?si=b16a9992b4b044be", "hrefLabel": "LISTEN", "internal": "vibes" },
+    { "id": "u-2023-09-30", "date": "2023-09-30", "dateLabel": "09.30.23", "headline": "Back at Abe's Pagoda", "body": "In Bushwick playing tracks with Tre Dambrocia from 10pm until late." },
+    { "id": "u-2023-08-04", "date": "2023-08-04", "dateLabel": "08.04.23", "headline": "Storm — new Deep House mix", "href": "https://soundcloud.com/dj-al-b/storm-2023", "hrefLabel": "LISTEN", "internal": "mixes" },
+    { "id": "u-2023-05-08", "date": "2023-05-08", "dateLabel": "05.08.23", "headline": "Vibes 14 for your listening pleasure", "href": "https://open.spotify.com/playlist/31wRFBzKyvTX5MqSCwYb2E?si=a7bee61d8db445a9&pt=a79ae0dbfbb010da5e202624dd52669f", "hrefLabel": "LISTEN", "internal": "vibes" },
+    { "id": "u-2023-05-06", "date": "2023-05-06", "dateLabel": "05.06.23", "headline": "New site, who dis?", "body": "We've launched Chunkylabs 2.0 with mixes, playlists, and more. The old site still lives on.", "href": "https://chunkylabsnyc.vercel.app/", "hrefLabel": "TIME TRAVEL" },
+    { "id": "u-2023-04-11", "date": "2023-04-11", "dateLabel": "04.11.23", "headline": "Tag teaming at Abe's Pagoda", "body": "In Bushwick with the homie Gant Johnson from 10pm until late." },
+    { "id": "u-2023-03-10", "date": "2023-03-10", "dateLabel": "03.10.23", "headline": "al b remix on Laurent Garnier's show", "body": "Rediscovered: Laurent Garnier's radio show featuring al b's remix of Carry Nation's \"This Bitch is Alive.\"", "href": "https://soundcloud.com/laurent-garnier/s4e24", "hrefLabel": "LISTEN" },
+    { "id": "u-2023-02-22", "date": "2023-02-22", "dateLabel": "02.22.23", "headline": "al b in \"Sunday at Il Posto\"", "body": "A small role in an indie film about our favorite NYC spot, Il Posto Accanto.", "href": "https://www.instagram.com/sundayatilpostofilm/", "hrefLabel": "PICS" }
+  ]
+}

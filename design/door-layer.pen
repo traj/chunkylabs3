@@ -174,7 +174,7 @@
       "fill": {
         "type": "image",
         "enabled": true,
-        "url": "plates/plate-mixes.png",
+        "url": "../public/transitions/mixes-counter/mixes-counter.poster.jpg",
         "mode": "fill"
       },
       "layout": "none",
@@ -1197,6 +1197,591 @@
       "width": 0,
       "height": 0,
       "content": "CRATE STATE 0 — geometry (2026-08-21). BG = crate-counter.poster.jpg = TRUE hold (reversed-clip first frame = counter->crate final frame). 2nd arrival (vibes ring return) within drift: mean 18, grade delta ~2.5R — overhang absorbs. LEFT GRID: seats y=190/350/510 (1920), pitch 160, baked sleeve ~158sq w/ ~20px horiz overlap between neighbors. Slot 166 = 158+4/side. PORTRAIT TENSION: left grid spans x~20-860, safe zone starts 656 — only the grid's rightmost column (~700-841) survives portrait. Heroes proposed stacked there. Bin faces (y~560-680, center) + wall crates = dig-trigger ZONE territory (semantics honesty: zone glow -> opens edits inventory), not occlusion slots. Heroes: only 2 Beatport releases exist; third slot = none until earned. Beatport art harvested at 500sq (1400 available — fold into re-pull task w/ Spotify 640s). Hero x/y are CD PROPOSALS — Al B owns placement; 'leaned' hero treatment instead of racked = open founder call. || BIN-SEAT UPDATE: heroes moved by Al B to center bin (133sq), converted to binclip wrappers — wrapper bottom edge = clip line = bin lip (measured y=678). Drag wrapper to re-bin; drag its TOP edge up to reveal more cover. No bottom stroke/shadow by construction (clipped). 4 edit covers staged bottom-left at 166 for Al B placement (gaz-nevada / frankie-workout / quimbara / grace-jones)."
+    },
+    {
+      "type": "frame",
+      "id": "tJ0CC",
+      "x": -2040,
+      "y": 0,
+      "name": "street-station",
+      "clip": true,
+      "width": 1920,
+      "height": 1080,
+      "fill": {
+        "type": "image",
+        "enabled": true,
+        "url": "../public/stills/entry-street.jpg",
+        "mode": "fill"
+      },
+      "layout": "none",
+      "children": [
+        {
+          "type": "rectangle",
+          "id": "V5Hwl",
+          "x": 656,
+          "y": 0,
+          "name": "portrait-safezone-guide",
+          "fill": "#00C8FF14",
+          "width": 608,
+          "height": 1080
+        },
+        {
+          "type": "rectangle",
+          "id": "V1mUe",
+          "x": 366,
+          "y": 158,
+          "name": "hotspot-storefront-cross-the-street",
+          "fill": "#FF4D6314",
+          "width": 1179,
+          "height": 660,
+          "stroke": "#FF4D63",
+          "strokeWidth": 1
+        },
+        {
+          "type": "rectangle",
+          "id": "hHvE9",
+          "x": 647,
+          "y": 476,
+          "name": "egg-sticker-on-box-CANDIDATE-left",
+          "fill": "#00FF7830",
+          "width": 37,
+          "height": 28,
+          "stroke": "#00FF78",
+          "strokeWidth": 1
+        },
+        {
+          "type": "rectangle",
+          "id": "INVY9",
+          "x": 1296,
+          "y": 521,
+          "name": "egg-sticker-on-box-CANDIDATE-right",
+          "fill": "#00FF7830",
+          "width": 31,
+          "height": 14,
+          "stroke": "#00FF78",
+          "strokeWidth": 1
+        }
+      ]
+    },
+    {
+      "type": "note",
+      "id": "LuCAI",
+      "x": -2040,
+      "y": 1140,
+      "name": "note-street-station",
+      "width": 0,
+      "height": 0,
+      "content": "STREET STATION (2026-08-21). BG = entry-street.jpg — the CANONICAL rest still by construction (still-rest model: crisp out0 composite, cross-dissolved over video; unlike the walls, no hold-frame extraction needed). Pink rect = existing stations.ts storefront hotspot [366,158]-[1545,818] -> becomes CROSS THE STREET (hover glow + gen'd hand-scrawl label, tier-2 DOM fade-in; scrawl asset = the one gen task in this pass). Green rects = street-egg CANDIDATES over baked box stickers: LEFT (647,476 37x28, at portrait-safe edge — CD lean) vs RIGHT (1290,518 30x13, desktop-only). Al B picks one; loser gets deleted. Egg = silent, NO idle tell; click -> unreleased-track download (track pick open). TIER DISCIPLINE: hotspots-over-baked + DOM fade-ins ONLY — nothing gets baked, 07-12 reshoot stays closed. CC-side (not Pen): strip dom.heading/body + old CTA from stations.ts street entry."
+    },
+    {
+      "type": "frame",
+      "id": "XtDeS",
+      "x": -2040,
+      "y": 2585,
+      "name": "counter-updates-insert",
+      "clip": true,
+      "width": 1920,
+      "height": 1080,
+      "fill": {
+        "type": "image",
+        "enabled": true,
+        "url": "../public/inserts/counter-updates.plate.source.png",
+        "mode": "fill"
+      },
+      "layout": "none",
+      "children": [
+        {
+          "type": "frame",
+          "id": "a2ck5",
+          "x": 0,
+          "y": 0,
+          "name": "annotations — NOT rendered in product",
+          "width": 1920,
+          "height": 1080,
+          "layout": "none",
+          "children": [
+            {
+              "type": "rectangle",
+              "id": "iXuAA",
+              "x": 700,
+              "y": 230,
+              "name": "zone-updates-page (ROUGH — measure + pad angle before build)",
+              "fill": "#00FF8815",
+              "width": 560,
+              "height": 730,
+              "stroke": "#00FF88",
+              "strokeWidth": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "j1qN3L",
+      "x": 40,
+      "y": 2585,
+      "name": "counter-index-insert",
+      "clip": true,
+      "width": 1920,
+      "height": 1080,
+      "fill": {
+        "type": "image",
+        "enabled": true,
+        "url": "../public/inserts/counter-index.plate.source.png",
+        "mode": "fill"
+      },
+      "layout": "none",
+      "children": [
+        {
+          "type": "frame",
+          "id": "ANqxO",
+          "x": 68,
+          "y": 171,
+          "name": "annotations — NOT rendered in product",
+          "width": 1920,
+          "height": 1080,
+          "layout": "none",
+          "children": [
+            {
+              "type": "rectangle",
+              "id": "sPnLx",
+              "x": 600,
+              "y": 150,
+              "name": "zone-index-collage (ROUGH — measure before build)",
+              "fill": "#00FF8815",
+              "width": 570,
+              "height": 700,
+              "stroke": "#00FF88",
+              "strokeWidth": 2
+            }
+          ]
+        },
+        {
+          "type": "rectangle",
+          "id": "ekASO",
+          "x": 895.4643124422697,
+          "y": 96,
+          "name": "sticker-shade",
+          "rotation": -5.489884362533532,
+          "fill": {
+            "type": "image",
+            "enabled": true,
+            "url": "shade-sticker-trans.png",
+            "mode": "fit"
+          },
+          "width": 349,
+          "height": 193
+        },
+        {
+          "type": "rectangle",
+          "id": "MQPvb",
+          "x": 183,
+          "y": 73.59679132027577,
+          "name": "sticker-ck-land",
+          "rotation": 1.7652543127442297,
+          "fill": {
+            "type": "image",
+            "enabled": true,
+            "url": "../public/inserts/stickers/ck-land.png",
+            "mode": "fit"
+          },
+          "width": 344,
+          "height": 192
+        },
+        {
+          "type": "rectangle",
+          "id": "yPhKb",
+          "x": 199,
+          "y": 573.1355228558459,
+          "name": "sticker-cut-loose",
+          "rotation": 6.000000000000001,
+          "fill": {
+            "type": "image",
+            "enabled": true,
+            "url": "../public/inserts/stickers/cut-loose.png",
+            "mode": "fit"
+          },
+          "width": 317,
+          "height": 176
+        },
+        {
+          "type": "rectangle",
+          "id": "A41z4C",
+          "x": 150,
+          "y": 768.8233121917888,
+          "name": "postcard-il-posto",
+          "rotation": 1.6962165966840945,
+          "fill": {
+            "type": "image",
+            "enabled": true,
+            "url": "../public/inserts/stickers/il-posto-postcard.png",
+            "mode": "fit"
+          },
+          "width": 467,
+          "height": 260
+        }
+      ]
+    },
+    {
+      "type": "note",
+      "id": "ryVCl",
+      "x": -2040,
+      "y": 2380,
+      "name": "note-counter-inserts",
+      "width": 1700,
+      "height": 170,
+      "content": "COUNTER INSERTS (2026-08-21) — plates = Al B picks, Higgsfield 2x, verified vs pixels. UPDATES: DOM text directly on pad paper (near-flat; measure rotation, no perspective warp); pagination not scroll, 5-6 entries/page. INDEX: DOM die-cut sticker collage on center door glass, occluding baked scraps; every sticker = link; contact lives here. Zones are ROUGH — founder eye + measure pass pending. Spec: docs/2026-08-21-spec-counter-inserts.md Rev B. Figma canon: page 11, frames 82:10 / 82:11."
+    },
+    {
+      "type": "frame",
+      "id": "mgjzt",
+      "x": -2040,
+      "y": 3965,
+      "name": "comp-updates-A-on-pad",
+      "clip": true,
+      "width": 1920,
+      "height": 1080,
+      "fill": {
+        "type": "image",
+        "enabled": true,
+        "url": "../public/inserts/counter-updates.plate.source.png",
+        "mode": "fill"
+      },
+      "layout": "none",
+      "children": [
+        {
+          "type": "frame",
+          "id": "Rv8XC",
+          "x": 676,
+          "y": 400,
+          "name": "pad-text-block",
+          "rotation": 18.3,
+          "width": 330,
+          "height": 520,
+          "layout": "vertical",
+          "gap": 22,
+          "children": [
+            {
+              "type": "frame",
+              "id": "Lh2Kx",
+              "name": "brand-stamp",
+              "width": "fill_container",
+              "layout": "vertical",
+              "padding": [
+                0,
+                0,
+                10,
+                0
+              ],
+              "children": [
+                {
+                  "type": "text",
+                  "id": "hX7bk",
+                  "name": "UPDATES-stamp",
+                  "fill": "#1A1512",
+                  "content": "UPDATES",
+                  "fontFamily": "Archivo Black",
+                  "fontSize": 25,
+                  "fontWeight": "normal",
+                  "letterSpacing": 6
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "r1eMe0",
+              "name": "entry 02.28.26",
+              "width": "fill_container",
+              "layout": "vertical",
+              "gap": 3,
+              "children": [
+                {
+                  "type": "text",
+                  "id": "x6insI",
+                  "name": "date",
+                  "fill": "#7A6A52",
+                  "content": "02.28.26",
+                  "fontFamily": "Space Mono",
+                  "fontSize": 13,
+                  "fontWeight": "normal",
+                  "letterSpacing": 1.5
+                },
+                {
+                  "type": "frame",
+                  "id": "IQbQI",
+                  "name": "hl-row",
+                  "width": "fill_container",
+                  "gap": 10,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "G5MBkz",
+                      "name": "headline",
+                      "fill": "#2E3450",
+                      "content": "Vibes 18 just dropped",
+                      "fontFamily": "Caveat",
+                      "fontSize": 30,
+                      "fontWeight": "600"
+                    },
+                    {
+                      "type": "text",
+                      "id": "VaKVk",
+                      "name": "link",
+                      "fill": "#8A4A3A",
+                      "content": "LISTEN →",
+                      "fontFamily": "Space Mono",
+                      "fontSize": 12,
+                      "fontWeight": "normal",
+                      "letterSpacing": 1
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "l9LKnX",
+              "name": "entry 10.03.25",
+              "width": "fill_container",
+              "layout": "vertical",
+              "gap": 3,
+              "children": [
+                {
+                  "type": "text",
+                  "id": "oVOHd",
+                  "name": "date",
+                  "fill": "#7A6A52",
+                  "content": "10.03.25",
+                  "fontFamily": "Space Mono",
+                  "fontSize": 13,
+                  "fontWeight": "normal",
+                  "letterSpacing": 1.5
+                },
+                {
+                  "type": "frame",
+                  "id": "g2iqZ0",
+                  "name": "hl-row",
+                  "width": "fill_container",
+                  "gap": 10,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "tsLz6",
+                      "name": "headline",
+                      "fill": "#2E3450",
+                      "content": "Vibes 17 is out now",
+                      "fontFamily": "Caveat",
+                      "fontSize": 30,
+                      "fontWeight": "600"
+                    },
+                    {
+                      "type": "text",
+                      "id": "qSi1t",
+                      "name": "link",
+                      "fill": "#8A4A3A",
+                      "content": "LISTEN →",
+                      "fontFamily": "Space Mono",
+                      "fontSize": 12,
+                      "fontWeight": "normal",
+                      "letterSpacing": 1
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "U2lKz",
+              "name": "entry 10.01.25",
+              "width": "fill_container",
+              "layout": "vertical",
+              "gap": 3,
+              "children": [
+                {
+                  "type": "text",
+                  "id": "jlYJu",
+                  "name": "date",
+                  "fill": "#7A6A52",
+                  "content": "10.01.25",
+                  "fontFamily": "Space Mono",
+                  "fontSize": 13,
+                  "fontWeight": "normal",
+                  "letterSpacing": 1.5
+                },
+                {
+                  "type": "frame",
+                  "id": "BQtkC",
+                  "name": "hl-row",
+                  "width": "fill_container",
+                  "gap": 10,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "cQJQp",
+                      "name": "headline",
+                      "fill": "#2E3450",
+                      "content": "Sunday at Il Posto streaming",
+                      "fontFamily": "Caveat",
+                      "fontSize": 30,
+                      "fontWeight": "600"
+                    },
+                    {
+                      "type": "text",
+                      "id": "IvHOw",
+                      "name": "link",
+                      "fill": "#8A4A3A",
+                      "content": "WATCH →",
+                      "fontFamily": "Space Mono",
+                      "fontSize": 12,
+                      "fontWeight": "normal",
+                      "letterSpacing": 1
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "B6JvP",
+              "name": "entry 07.22.25",
+              "width": "fill_container",
+              "layout": "vertical",
+              "gap": 3,
+              "children": [
+                {
+                  "type": "text",
+                  "id": "SyOPd",
+                  "name": "date",
+                  "fill": "#7A6A52",
+                  "content": "07.22.25",
+                  "fontFamily": "Space Mono",
+                  "fontSize": 13,
+                  "fontWeight": "normal",
+                  "letterSpacing": 1.5
+                },
+                {
+                  "type": "frame",
+                  "id": "bXpCe",
+                  "name": "hl-row",
+                  "width": "fill_container",
+                  "gap": 10,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "SxW1s",
+                      "name": "headline",
+                      "fill": "#2E3450",
+                      "content": "Tapes added to the Spotlight",
+                      "fontFamily": "Caveat",
+                      "fontSize": 30,
+                      "fontWeight": "600"
+                    },
+                    {
+                      "type": "text",
+                      "id": "jPNdR",
+                      "name": "link",
+                      "fill": "#8A4A3A",
+                      "content": "DIG →",
+                      "fontFamily": "Space Mono",
+                      "fontSize": 12,
+                      "fontWeight": "normal",
+                      "letterSpacing": 1
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "cK3EX",
+              "name": "entry 12.20.24",
+              "width": "fill_container",
+              "layout": "vertical",
+              "gap": 3,
+              "children": [
+                {
+                  "type": "text",
+                  "id": "dOh25",
+                  "name": "date",
+                  "fill": "#7A6A52",
+                  "content": "12.20.24",
+                  "fontFamily": "Space Mono",
+                  "fontSize": 13,
+                  "fontWeight": "normal",
+                  "letterSpacing": 1.5
+                },
+                {
+                  "type": "frame",
+                  "id": "SBEUg",
+                  "name": "hl-row",
+                  "width": "fill_container",
+                  "gap": 10,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "tga0A",
+                      "name": "headline",
+                      "fill": "#2E3450",
+                      "content": "Vibes 16 now available",
+                      "fontFamily": "Caveat",
+                      "fontSize": 30,
+                      "fontWeight": "600"
+                    },
+                    {
+                      "type": "text",
+                      "id": "e3U7Kg",
+                      "name": "link",
+                      "fill": "#8A4A3A",
+                      "content": "LISTEN →",
+                      "fontFamily": "Space Mono",
+                      "fontSize": 12,
+                      "fontWeight": "normal",
+                      "letterSpacing": 1
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "id": "eQwr1",
+              "name": "pg",
+              "fill": "#7A6A52",
+              "content": "PG 1/4  →",
+              "fontFamily": "Space Mono",
+              "fontSize": 13,
+              "fontWeight": "normal",
+              "letterSpacing": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "note",
+      "id": "b0fLB",
+      "x": -2040,
+      "y": 3820,
+      "name": "note-comp-updates-AB",
+      "width": 1700,
+      "height": 120,
+      "content": "COMP: UPDATES page, two models on the real plate. A (left) = ON-PAD, text rotated -18.3deg (measured from pixels: pad edges 18.0/18.6deg, mild perspective ignored). B (right) = LIFTED PAGE, flat sheet +1.6deg over dimmed plate, pad stays anchor. Same 5 sample entries, Caveat headlines / Space Mono data (hybrid voice, draft). Judge: legibility over 5-6 entries, diegesis, which one you'd read every week. Founder eye decides; loser gets deleted."
+    },
+    {
+      "type": "note",
+      "id": "cjiHN",
+      "x": 2040,
+      "y": -160,
+      "name": "note-mixes-rehold",
+      "width": 1700,
+      "height": 120,
+      "content": "MIXES RE-PIN (2026-08-21): arrangement background swapped plate-mixes.png -> mixes-counter.poster.jpg (TRUE HOLD; the session-4 reconcile flag come due — plate framing drifted vs held frame, visible on real footage in QA batch 3). AL B: drag the 7 covers + VIEW ALL onto the baked face-out sleeves in THIS background. CD reads back coords after; CC applies. Amber-multiply half of the reconcile still pending the treatment-sampler pass."
     }
   ],
   "fileToken": "d366873a-c3e6-4897-8866-5c2a84d88082"
