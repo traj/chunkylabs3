@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import {
   STATIONS,
   type Station,
@@ -14,6 +14,8 @@ import { StationStill } from "./StationStill";
 import { StationHotspots } from "./StationHotspots";
 import { useTransitionPhase } from "./useTransitionPhase";
 import { usePlaybackUnlock } from "./PlaybackUnlock";
+import { WallOverlay } from "@/components/walls/WallOverlay";
+import { getWallConfig } from "@/components/walls/wallConfig";
 
 // The two entry stations run the STILL-REST model: a crisp composited still is the resting frame
 // at each end, and the clip is a pure in-between that the stills dissolve into and out of.
@@ -120,6 +122,14 @@ export function StationFrame({
   // so a stale `ended` from a previous visit can't paint over a re-armed, moving clip.
   const atRest = isActive && (phase === "ended" || phase === "none");
 
+  // Content walls (Mixes / Vibes / Crate) get the composited content layer over the held frame.
+  // Its state (rest/browse/detail) gates the functional exit CTAs: in REST they show (the only way
+  // out until the nav-puck task), but a docked BROWSE/DETAIL panel hides them so the surface stays
+  // clean — Esc/✕ walks back to REST, where the CTAs return.
+  const isWall = Boolean(getWallConfig(station.id));
+  const [wallMode, setWallMode] = useState<"rest" | "browse" | "detail">("rest");
+  const showExits = !isWall || wallMode === "rest";
+
   // ENTRY STILL on the door station. The walk-up opens on the street's own rest frame, so the door
   // scene starts holding that SAME crisp still — the (instant) street→door section swap therefore
   // shows an identical image — and then dissolves it into the moving clip. Without it the swap
@@ -213,6 +223,17 @@ export function StationFrame({
         className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-black/40"
       />
 
+      {/* CONTENT LAYER — the three content walls (Mixes / Vibes / Crate). Composited over the held
+          frame + scrim; fades in only at rest (fade-in contract). Non-wall stations render nothing. */}
+      {isWall ? (
+        <WallOverlay
+          station={station}
+          isActive={isActive}
+          atRest={atRest}
+          onModeChange={setWallMode}
+        />
+      ) : null}
+
       {/* 1c. HOTSPOTS — transparent, percentage-anchored click regions ON the scene (imagemap).
           Above the scrim so the hover affordance reads, but still under the DOM layer, so a real
           CTA button always wins the click where they overlap. Only live once the scene is at
@@ -238,35 +259,39 @@ export function StationFrame({
             edge CTAs: below the left/right-centre buttons, left of and above the bottom-centre
             one. Body text is line-clamped and the block clips, so long copy never grows into a
             CTA. */}
-        <div className="absolute bottom-20 left-0 max-h-[36vh] max-w-[min(26rem,68vw)] overflow-hidden px-5 sm:px-7 [text-shadow:0_1px_3px_rgba(0,0,0,0.6)]">
-          <p className="text-[11px] uppercase tracking-[0.3em] text-white/60">
-            Station {index + 1} / {total}
-          </p>
-          <h2 className="mt-1.5 text-2xl font-semibold tracking-tight sm:text-3xl">
-            STATION: {station.label}
-          </h2>
-          <p className="mt-2 text-sm text-white/75 line-clamp-2">
-            {station.description}
-          </p>
-          {station.dom.heading && (
-            <h3 className="mt-4 text-lg font-medium text-white">
-              {station.dom.heading}
-            </h3>
-          )}
-          {station.dom.body && (
-            <p className="mt-1 text-sm text-white/80 line-clamp-2">
-              {station.dom.body}
+        {/* Dev scene copy — suppressed on the content walls, where the content layer + HUD stand
+            in for it. Kept for street/door/counter. */}
+        {!isWall && (
+          <div className="absolute bottom-20 left-0 max-h-[36vh] max-w-[min(26rem,68vw)] overflow-hidden px-5 sm:px-7 [text-shadow:0_1px_3px_rgba(0,0,0,0.6)]">
+            <p className="text-[11px] uppercase tracking-[0.3em] text-white/60">
+              Station {index + 1} / {total}
             </p>
-          )}
-          {station.dom.cta && (
-            <Link
-              href={station.dom.cta.href}
-              className="pointer-events-auto mt-3 inline-block rounded-full border border-white/30 bg-black/40 px-5 py-2 text-sm text-white transition-colors hover:bg-white/10"
-            >
-              {station.dom.cta.label}
-            </Link>
-          )}
-        </div>
+            <h2 className="mt-1.5 text-2xl font-semibold tracking-tight sm:text-3xl">
+              STATION: {station.label}
+            </h2>
+            <p className="mt-2 text-sm text-white/75 line-clamp-2">
+              {station.description}
+            </p>
+            {station.dom.heading && (
+              <h3 className="mt-4 text-lg font-medium text-white">
+                {station.dom.heading}
+              </h3>
+            )}
+            {station.dom.body && (
+              <p className="mt-1 text-sm text-white/80 line-clamp-2">
+                {station.dom.body}
+              </p>
+            )}
+            {station.dom.cta && (
+              <Link
+                href={station.dom.cta.href}
+                className="pointer-events-auto mt-3 inline-block rounded-full border border-white/30 bg-black/40 px-5 py-2 text-sm text-white transition-colors hover:bg-white/10"
+              >
+                {station.dom.cta.label}
+              </Link>
+            )}
+          </div>
+        )}
 
         {/* Directional exits — click-to-navigate, each pinned to its direction's edge safe zone
             via EXIT_ZONE (back: top-left · left: left-centre · right: right-centre · forward:
@@ -276,7 +301,8 @@ export function StationFrame({
         {/* Key on to+direction, not `to` alone: a station may have TWO exits to the same
             destination — e.g. a side wall's persistent top-left "home" button AND its spatial
             directional counter exit both navigate to the counter (intentional, see stations.ts). */}
-        {station.exits?.map((exit) => (
+        {showExits &&
+          station.exits?.map((exit) => (
           <button
             key={`${exit.to}:${exit.direction ?? ""}`}
             type="button"
