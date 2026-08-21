@@ -3,6 +3,10 @@
 import { useSoundCloud } from "./soundcloud";
 import { C, FONT, fmtTime } from "./ui";
 
+// v5 mini-player × 1.2, corner-doctrine BR slot (right/bottom inset 91). StagePinned places it;
+// height is approximate (two rows) and only feeds the off-ratio clamp.
+export const TRANSPORT_STAGE = { x: 1920 - 485 - 91, y: 1080 - 132 - 91, w: 485, h: 132 };
+
 /**
  * BR mini-player — the ONLY visible player for SC surfaces (mixes/live/tapes/edits). v5 mini
  * anatomy × 1.2, corner-doctrine BR slot. Reads the SC engine; appears once a track is loaded.
@@ -19,10 +23,8 @@ export function Transport() {
 
   return (
     <div
-      className="pointer-events-auto absolute"
       style={{
-        right: 91,
-        bottom: 91,
+        pointerEvents: "auto",
         width: 485,
         boxSizing: "border-box",
         border: `1px solid ${C.white}`,
@@ -30,7 +32,6 @@ export function Transport() {
         backdropFilter: "blur(2px)",
         WebkitBackdropFilter: "blur(2px)",
         overflow: "hidden",
-        zIndex: 45,
       }}
     >
       {/* meta row */}

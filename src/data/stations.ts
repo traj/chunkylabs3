@@ -191,10 +191,9 @@ export const STATIONS: readonly Station[] = [
         rect: { xPct: 19.06, yPct: 14.63, wPct: 61.41, hPct: 61.11 },
       },
     ],
-    dom: {
-      heading: "chunkylabs",
-      body: "A record store that only exists here.",
-    },
+    // Entry stations are HUD-free and copy-free — footage + diegetic hotspots only. The legacy
+    // scene copy was stripped (the "cross the street" scrawl is a separate, parked design).
+    dom: {},
     // Forward to the door (street has no back — it's the entry).
     exits: [{ label: "Come in →", to: "door", direction: "forward" }],
   },
@@ -245,10 +244,8 @@ export const STATIONS: readonly Station[] = [
         rect: { xPct: 44.5, yPct: 21, wPct: 12, hPct: 67 },
       },
     ],
-    dom: {
-      heading: "Come in",
-      body: "Mind the step.",
-    },
+    // Entry station — copy-free (see street). Footage + the doorway hotspot only.
+    dom: {},
     // Forward edge is now live: the real counter clip exists, so door → counter walks the
     // visitor onto real footage (street → door → counter). The remaining walls still hold
     // synthetic placeholders, so the reachable chain stops at the counter for now.

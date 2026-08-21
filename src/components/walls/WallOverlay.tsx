@@ -6,11 +6,11 @@ import type { WallItem } from "@/data/catalog";
 import { SoundCloudProvider, useSoundCloud } from "./soundcloud";
 import { getWallConfig, type WallConfig } from "./wallConfig";
 import { WallStage } from "./WallStage";
-import { WallHud } from "./WallHud";
+import { StagePinned } from "./StagePinned";
 import { RestLayer } from "./RestLayer";
-import { BrowsePanel } from "./BrowsePanel";
-import { DetailCard } from "./DetailCard";
-import { Transport } from "./Transport";
+import { BrowsePanel, PANEL } from "./BrowsePanel";
+import { DetailCard, detailCardStage } from "./DetailCard";
+import { Transport, TRANSPORT_STAGE } from "./Transport";
 
 type Mode = "rest" | "browse" | "detail";
 
@@ -111,42 +111,52 @@ function WallContent({
     return () => window.removeEventListener("keydown", onKey);
   }, [isActive, back]);
 
+  const panelShown = mode === "browse" || (mode === "detail" && detailFrom === "browse");
+
   return (
-    <WallStage>
-      <Fade shown={shown} delay={0}>
-        <WallHud roomTitle={config.roomTitle} navCurrent={config.navCurrent} />
-      </Fade>
-
-      <Fade shown={shown} delay={120}>
-        {mode === "rest" ? (
-          <RestLayer
-            config={config}
-            onSelectItem={(item) => openDetail(item, "rest")}
-            onViewAll={() => setMode("browse")}
-          />
-        ) : mode === "browse" || detailFrom === "browse" ? (
-          // Panel: shown in BROWSE, and behind a browse-launched DETAIL (v5 5b). Its ✕ closes the
-          // whole browse back to REST; the card's ✕ steps back to browse.
-          <BrowsePanel
-            config={config}
-            activeTabId={activeTabId}
-            onTabChange={setActiveTabId}
-            onSelectItem={(item) => openDetail(item, "browse")}
-            onClose={() => setMode("rest")}
-          />
-        ) : null}
-      </Fade>
-
-      {mode === "detail" && selected ? (
-        <Fade shown={shown} delay={180}>
-          <DetailCard item={selected} onClose={back} />
+    <>
+      {/* Diegetic covers — EXACT stage pin (track the picture on the shelf), no clamp. */}
+      <WallStage>
+        <Fade shown={shown} delay={120}>
+          {mode === "rest" ? (
+            <RestLayer
+              config={config}
+              onSelectItem={(item) => openDetail(item, "rest")}
+              onViewAll={() => setMode("browse")}
+            />
+          ) : null}
         </Fade>
+      </WallStage>
+
+      {/* Chrome — CLAMP-aware stage pin (tracks the picture but never leaves the viewport). */}
+      {panelShown ? (
+        <StagePinned x={PANEL.x} y={PANEL.y} w={PANEL.w} h={PANEL.h} z={30}>
+          <Fade shown={shown} delay={120}>
+            <BrowsePanel
+              config={config}
+              activeTabId={activeTabId}
+              onTabChange={setActiveTabId}
+              onSelectItem={(item) => openDetail(item, "browse")}
+              onClose={() => setMode("rest")}
+            />
+          </Fade>
+        </StagePinned>
       ) : null}
 
-      <Fade shown={shown} delay={240}>
-        <Transport />
-      </Fade>
-    </WallStage>
+      {mode === "detail" && selected ? (
+        <StagePinned {...detailCardStage(selected)} z={40}>
+          <Fade shown={shown} delay={180}>
+            <DetailCard item={selected} onClose={back} />
+          </Fade>
+        </StagePinned>
+      ) : null}
+
+      <StagePinned x={TRANSPORT_STAGE.x} y={TRANSPORT_STAGE.y} w={TRANSPORT_STAGE.w} h={TRANSPORT_STAGE.h} z={45}>
+        <Fade shown={shown} delay={240}>
+          <Transport />
+        </Fade>
+      </StagePinned>
+    </>
   );
 }
 

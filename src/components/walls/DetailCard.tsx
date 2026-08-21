@@ -9,6 +9,15 @@ const CARD_W = 624; // v5 520 × 1.2
 const POS_5B = { x: 610, y: 216 };
 const POS_5C = { x: 610, y: 150 };
 
+/** Stage placement (design px) for a detail card, by surface type — StagePinned positions it.
+ *  Heights are approximate (content-driven) and only feed the off-ratio clamp. */
+export function detailCardStage(item: WallItem): { x: number; y: number; w: number; h: number } {
+  const isSpotify = item.kind === "playlist" || item.kind === "vibe";
+  return isSpotify
+    ? { ...POS_5C, w: CARD_W, h: 560 }
+    : { ...POS_5B, w: CARD_W, h: 430 };
+}
+
 function ActionPrimary({
   label,
   onClick,
@@ -80,24 +89,20 @@ export function DetailCard({
   const isSC = !isSpotify && !isRelease;
   const playingThis = sc.current?.id === item.id && sc.isPlaying;
 
-  const pos = isSpotify ? POS_5C : POS_5B;
   const coverSize = isSpotify ? 178 : 192;
   const titleSize = isSpotify ? 36 : 38;
   const meta = metaText(item);
 
   return (
     <div
-      className="pointer-events-auto absolute"
       style={{
-        left: pos.x,
-        top: pos.y,
+        pointerEvents: "auto",
         width: CARD_W,
         border: `1px solid ${C.white}`,
         background: C.panelDetail,
         backdropFilter: "blur(2px)",
         WebkitBackdropFilter: "blur(2px)",
         overflow: "hidden",
-        zIndex: 40,
       }}
     >
       <CloseButton onClick={onClose} />

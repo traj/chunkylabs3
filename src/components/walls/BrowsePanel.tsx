@@ -6,8 +6,8 @@ import { useSoundCloud } from "./soundcloud";
 import { C, CloseButton, FONT, Tag, metaText } from "./ui";
 import type { WallConfig, WallTab } from "./wallConfig";
 
-// v5 panel anatomy × 1.2 → design-space px.
-const PANEL = { x: 1265, y: 91, w: 530, h: 754 };
+// v5 panel anatomy × 1.2 → design-space px. Size only; StagePinned places it at (1265,91).
+export const PANEL = { x: 1265, y: 91, w: 530, h: 754 };
 
 function Row({
   item,
@@ -116,10 +116,8 @@ export function BrowsePanel({
 
   return (
     <div
-      className="pointer-events-auto absolute"
       style={{
-        left: PANEL.x,
-        top: PANEL.y,
+        pointerEvents: "auto",
         width: PANEL.w,
         height: PANEL.h,
         border: `1px solid ${C.white}`,
@@ -129,7 +127,6 @@ export function BrowsePanel({
         display: "flex",
         flexDirection: "column",
         overflow: "hidden",
-        zIndex: 30,
       }}
     >
       <CloseButton onClick={onClose} />
