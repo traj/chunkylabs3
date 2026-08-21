@@ -603,6 +603,600 @@
       "width": 560,
       "height": 40,
       "content": "TREATMENT SAMPLER — top: sugar=white glow, heart=PINK glow | mid: housetape=1px white stroke, storm=2px stroke+shadow, jan2k=AMBER glow | bottom: salsa=dark shadow only, live-in-bk=5px cream frame"
+    },
+    {
+      "type": "frame",
+      "id": "fTdrZ",
+      "x": 4080,
+      "y": 0,
+      "name": "vibes-state0-arrangement",
+      "clip": true,
+      "width": 1920,
+      "height": 1080,
+      "fill": {
+        "type": "image",
+        "enabled": true,
+        "url": "../public/transitions/vibes-crate/vibes-crate.poster.jpg",
+        "mode": "fill"
+      },
+      "layout": "none",
+      "children": [
+        {
+          "type": "rectangle",
+          "id": "NOckV",
+          "x": 0,
+          "y": 227,
+          "name": "guide-seat-r1",
+          "fill": "#00FF7880",
+          "width": 1920,
+          "height": 2
+        },
+        {
+          "type": "rectangle",
+          "id": "E3U5o",
+          "x": 0,
+          "y": 410,
+          "name": "guide-seat-r2",
+          "fill": "#00FF7880",
+          "width": 1920,
+          "height": 2
+        },
+        {
+          "type": "rectangle",
+          "id": "xbXxZ",
+          "x": 0,
+          "y": 603,
+          "name": "guide-seat-r3",
+          "fill": "#00FF7880",
+          "width": 1920,
+          "height": 2
+        },
+        {
+          "type": "rectangle",
+          "id": "Y4gfM",
+          "x": 656,
+          "y": 0,
+          "name": "guide-portrait-left",
+          "fill": "#00C8FF80",
+          "width": 2,
+          "height": 1080
+        },
+        {
+          "type": "rectangle",
+          "id": "q8nwn9",
+          "x": 1262,
+          "y": 0,
+          "name": "guide-portrait-right",
+          "fill": "#00C8FF80",
+          "width": 2,
+          "height": 1080
+        },
+        {
+          "type": "rectangle",
+          "id": "Dut8M",
+          "x": 746,
+          "y": 44,
+          "name": "display-vibes-01",
+          "fill": [
+            {
+              "type": "image",
+              "enabled": true,
+              "url": "../content/harvest/art/vibes-01.jpg",
+              "mode": "fill"
+            },
+            {
+              "type": "color",
+              "color": "#F5923A4D",
+              "enabled": true,
+              "blendMode": "multiply"
+            }
+          ],
+          "width": 172,
+          "height": 172,
+          "stroke": "#FFFFFF",
+          "strokeWidth": 2,
+          "effect": {
+            "type": "shadow",
+            "shadowType": "outer",
+            "color": "#241200B3",
+            "offset": {
+              "x": 0,
+              "y": 4
+            },
+            "blur": 14,
+            "spread": 3
+          }
+        },
+        {
+          "type": "rectangle",
+          "id": "iS0ea",
+          "x": 547,
+          "y": 238,
+          "name": "display-vibes-07",
+          "fill": [
+            {
+              "type": "image",
+              "enabled": true,
+              "url": "../content/harvest/art/vibes-07.jpg",
+              "mode": "fill"
+            },
+            {
+              "type": "color",
+              "color": "#F5923A4D",
+              "enabled": true,
+              "blendMode": "multiply"
+            }
+          ],
+          "width": 172,
+          "height": 172,
+          "stroke": "#FFFFFF",
+          "strokeWidth": 2,
+          "effect": {
+            "type": "shadow",
+            "shadowType": "outer",
+            "color": "#241200B3",
+            "offset": {
+              "x": 0,
+              "y": 4
+            },
+            "blur": 14,
+            "spread": 3
+          }
+        },
+        {
+          "type": "rectangle",
+          "id": "S02Br",
+          "x": 546,
+          "y": 43,
+          "name": "display-vibes-12",
+          "fill": [
+            {
+              "type": "image",
+              "enabled": true,
+              "url": "../content/harvest/art/vibes-12.jpg",
+              "mode": "fill"
+            },
+            {
+              "type": "color",
+              "color": "#F5923A4D",
+              "enabled": true,
+              "blendMode": "multiply"
+            }
+          ],
+          "width": 172,
+          "height": 172,
+          "stroke": "#FFFFFF",
+          "strokeWidth": 2,
+          "effect": {
+            "type": "shadow",
+            "shadowType": "outer",
+            "color": "#241200B3",
+            "offset": {
+              "x": 0,
+              "y": 4
+            },
+            "blur": 14,
+            "spread": 3
+          }
+        },
+        {
+          "type": "rectangle",
+          "id": "INixk",
+          "x": 746,
+          "y": 241,
+          "name": "display-vibes-18",
+          "fill": [
+            {
+              "type": "image",
+              "enabled": true,
+              "url": "../content/harvest/art/vibes-18.jpg",
+              "mode": "fill"
+            },
+            {
+              "type": "color",
+              "color": "#F5923A4D",
+              "enabled": true,
+              "blendMode": "multiply"
+            }
+          ],
+          "width": 172,
+          "height": 172,
+          "stroke": "#FFFFFF",
+          "strokeWidth": 2,
+          "effect": {
+            "type": "shadow",
+            "shadowType": "outer",
+            "color": "#241200B3",
+            "offset": {
+              "x": 0,
+              "y": 4
+            },
+            "blur": 14,
+            "spread": 3
+          }
+        },
+        {
+          "type": "frame",
+          "id": "OkSSt",
+          "x": 746,
+          "y": 434,
+          "name": "slot-view-all-divider",
+          "width": 172,
+          "height": 172,
+          "fill": "#140D06D9",
+          "stroke": "#FFFFFF",
+          "strokeWidth": 2,
+          "effect": {
+            "type": "shadow",
+            "shadowType": "outer",
+            "color": "#241200B3",
+            "offset": {
+              "x": 0,
+              "y": 4
+            },
+            "blur": 14,
+            "spread": 3
+          },
+          "justifyContent": "center",
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "text",
+              "id": "P8COt",
+              "name": "va-label",
+              "fill": "#FFFFFF",
+              "content": "VIEW ALL",
+              "fontFamily": "Space Mono",
+              "fontSize": 20,
+              "fontWeight": "normal"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "note",
+      "id": "rAFP8",
+      "x": 4080,
+      "y": 1140,
+      "name": "note-vibes-geometry",
+      "width": 0,
+      "height": 0,
+      "content": "VIBES STATE 0 — geometry (2026-08-21). BG = vibes-crate.poster.jpg = TRUE hold frame (reverse-clip first frame = crate-vibes final frame). NOT the plate: plate-vibes.png is pristine Meshy still, ~15 mean brighter/sharper than what renders. Grade varies by arrival ~6pts R (via-Mixes brighter than via-Crate) — treatment must read on both posters. Seats y=227/410/603 (1920). Baked sleeve ~164px sq. Slot 172 = 164+4px overhang/side. Row 4 DEAD (bins occlude). Outer columns drift larger (perspective) — eye-nudge per slot. Portrait-safe x 656-1264 (cyan guides): >=2 slots must live inside. Slot x/y here are CD PROPOSALS ONLY — Al B owns placement. Treatment = locked Mixes rest (2px white stroke + shadow + amber multiply); Vibes sampler (5px cream frame candidate) NOT yet run. || TILT PASS 2026-08-21: baked-sleeve leans measured from side edges (keystone = depth lean, not rotation; rotation approximates). Occlusion safe at ZERO rotation (max keystone displacement <=4px = overhang). VERDICT (Al B): ZERO ROTATION on all slots - measured tilts applied then REJECTED by eye (read weird). Covers sit square; occlusion safe (keystone <= overhang). Do not relitigate."
+    },
+    {
+      "type": "frame",
+      "id": "ZCOog",
+      "x": 6120,
+      "y": 0,
+      "name": "crate-state0-arrangement",
+      "clip": true,
+      "width": 1920,
+      "height": 1080,
+      "fill": {
+        "type": "image",
+        "enabled": true,
+        "url": "../public/transitions/crate-counter/crate-counter.poster.jpg",
+        "mode": "fill"
+      },
+      "layout": "none",
+      "children": [
+        {
+          "type": "rectangle",
+          "id": "JYrd7",
+          "x": 0,
+          "y": 190,
+          "name": "guide-seat-r1",
+          "fill": "#00FF7880",
+          "width": 1920,
+          "height": 2
+        },
+        {
+          "type": "rectangle",
+          "id": "D2osPs",
+          "x": 0,
+          "y": 350,
+          "name": "guide-seat-r2",
+          "fill": "#00FF7880",
+          "width": 1920,
+          "height": 2
+        },
+        {
+          "type": "rectangle",
+          "id": "I6fgb",
+          "x": 0,
+          "y": 510,
+          "name": "guide-seat-r3",
+          "fill": "#00FF7880",
+          "width": 1920,
+          "height": 2
+        },
+        {
+          "type": "rectangle",
+          "id": "U2jokF",
+          "x": 656,
+          "y": 0,
+          "name": "guide-portrait-left",
+          "fill": "#00C8FF80",
+          "width": 2,
+          "height": 1080
+        },
+        {
+          "type": "rectangle",
+          "id": "fylRG",
+          "x": 1262,
+          "y": 0,
+          "name": "guide-portrait-right",
+          "fill": "#00C8FF80",
+          "width": 2,
+          "height": 1080
+        },
+        {
+          "type": "frame",
+          "id": "s1rJ30",
+          "x": 790,
+          "y": 591,
+          "name": "binclip-carry-nation",
+          "clip": true,
+          "width": 181,
+          "height": 87,
+          "layout": "none",
+          "children": [
+            {
+              "type": "rectangle",
+              "id": "d0E7eB",
+              "x": 24,
+              "y": 24,
+              "name": "hero-carry-nation",
+              "fill": [
+                {
+                  "type": "image",
+                  "enabled": true,
+                  "url": "../content/harvest/art/the-carry-nation-house-like-this-al-b-s-bitches-before-snitc.jpg",
+                  "mode": "fill"
+                },
+                {
+                  "type": "color",
+                  "color": "#F5923A4D",
+                  "enabled": true,
+                  "blendMode": "multiply"
+                }
+              ],
+              "width": 133,
+              "height": 133,
+              "stroke": "#FFFFFF",
+              "strokeWidth": 2,
+              "effect": {
+                "type": "shadow",
+                "shadowType": "outer",
+                "color": "#241200B3",
+                "offset": {
+                  "x": 0,
+                  "y": 4
+                },
+                "blur": 14,
+                "spread": 3
+              }
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "JKNYQ",
+          "x": 943,
+          "y": 591,
+          "name": "binclip-escandalo",
+          "clip": true,
+          "width": 181,
+          "height": 87,
+          "layout": "none",
+          "children": [
+            {
+              "type": "rectangle",
+              "id": "KrLxm",
+              "x": 24,
+              "y": 24,
+              "name": "hero-escandalo",
+              "fill": [
+                {
+                  "type": "image",
+                  "enabled": true,
+                  "url": "../content/harvest/art/escandalo-nocturning-al-b-and-garito-s-cold-d-remix-bagpak-s.jpg",
+                  "mode": "fill"
+                },
+                {
+                  "type": "color",
+                  "color": "#F5923A4D",
+                  "enabled": true,
+                  "blendMode": "multiply"
+                }
+              ],
+              "width": 133,
+              "height": 133,
+              "stroke": "#FFFFFF",
+              "strokeWidth": 2,
+              "effect": {
+                "type": "shadow",
+                "shadowType": "outer",
+                "color": "#241200B3",
+                "offset": {
+                  "x": 0,
+                  "y": 4
+                },
+                "blur": 14,
+                "spread": 3
+              }
+            }
+          ]
+        },
+        {
+          "type": "rectangle",
+          "id": "DsiuJ",
+          "x": 718,
+          "y": 212,
+          "name": "edit-gaz-nevada",
+          "fill": [
+            {
+              "type": "image",
+              "enabled": true,
+              "url": "../content/harvest/art/tracks/gaz-nevada-i-c-love-affair-al-b-s-rapless-edit.jpg",
+              "mode": "fill"
+            },
+            {
+              "type": "color",
+              "color": "#F5923A4D",
+              "enabled": true,
+              "blendMode": "multiply"
+            }
+          ],
+          "width": 125,
+          "height": 125,
+          "stroke": "#FFFFFF",
+          "strokeWidth": 2,
+          "effect": {
+            "type": "shadow",
+            "shadowType": "outer",
+            "color": "#241200B3",
+            "offset": {
+              "x": 0,
+              "y": 4
+            },
+            "blur": 14,
+            "spread": 3
+          }
+        },
+        {
+          "type": "rectangle",
+          "id": "U8sYM",
+          "x": 718,
+          "y": 52,
+          "name": "edit-frankie-workout",
+          "fill": [
+            {
+              "type": "image",
+              "enabled": true,
+              "url": "../content/harvest/art/tracks/frankie-knuckles-workout-al-b-s-fk-always-edit.jpg",
+              "mode": "fill"
+            },
+            {
+              "type": "color",
+              "color": "#F5923A4D",
+              "enabled": true,
+              "blendMode": "multiply"
+            }
+          ],
+          "width": 125,
+          "height": 125,
+          "stroke": "#FFFFFF",
+          "strokeWidth": 2,
+          "effect": {
+            "type": "shadow",
+            "shadowType": "outer",
+            "color": "#241200B3",
+            "offset": {
+              "x": 0,
+              "y": 4
+            },
+            "blur": 14,
+            "spread": 3
+          }
+        },
+        {
+          "type": "rectangle",
+          "id": "eosNa",
+          "x": 720,
+          "y": 371,
+          "name": "edit-grace-jones",
+          "fill": [
+            {
+              "type": "image",
+              "enabled": true,
+              "url": "../content/harvest/art/tracks/grace-jones-love-on-top-of-love-al-b-s-endless-dub-edit.jpg",
+              "mode": "fill"
+            },
+            {
+              "type": "color",
+              "color": "#F5923A4D",
+              "enabled": true,
+              "blendMode": "multiply"
+            }
+          ],
+          "width": 125,
+          "height": 125,
+          "stroke": "#FFFFFF",
+          "strokeWidth": 2,
+          "effect": {
+            "type": "shadow",
+            "shadowType": "outer",
+            "color": "#241200B3",
+            "offset": {
+              "x": 0,
+              "y": 4
+            },
+            "blur": 14,
+            "spread": 3
+          }
+        },
+        {
+          "type": "frame",
+          "id": "YWKNr",
+          "x": 1095,
+          "y": 589,
+          "name": "binclip-quimbara",
+          "clip": true,
+          "width": 177,
+          "height": 90,
+          "layout": "none",
+          "children": [
+            {
+              "type": "rectangle",
+              "id": "fF8fh",
+              "x": 24,
+              "y": 24,
+              "name": "edit-quimbara",
+              "fill": [
+                {
+                  "type": "image",
+                  "enabled": true,
+                  "url": "../content/harvest/art/tracks/celia-and-johnny-quimbara-al-b-s-azucar-edit.jpg",
+                  "mode": "fill"
+                },
+                {
+                  "type": "color",
+                  "color": "#F5923A4D",
+                  "enabled": true,
+                  "blendMode": "multiply"
+                }
+              ],
+              "width": 131,
+              "height": 131,
+              "stroke": "#FFFFFF",
+              "strokeWidth": 2,
+              "effect": {
+                "type": "shadow",
+                "shadowType": "outer",
+                "color": "#241200B3",
+                "offset": {
+                  "x": 0,
+                  "y": 4
+                },
+                "blur": 14,
+                "spread": 3
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "note",
+      "id": "F1cbK9",
+      "x": 6120,
+      "y": 1140,
+      "name": "note-crate-geometry",
+      "width": 0,
+      "height": 0,
+      "content": "CRATE STATE 0 — geometry (2026-08-21). BG = crate-counter.poster.jpg = TRUE hold (reversed-clip first frame = counter->crate final frame). 2nd arrival (vibes ring return) within drift: mean 18, grade delta ~2.5R — overhang absorbs. LEFT GRID: seats y=190/350/510 (1920), pitch 160, baked sleeve ~158sq w/ ~20px horiz overlap between neighbors. Slot 166 = 158+4/side. PORTRAIT TENSION: left grid spans x~20-860, safe zone starts 656 — only the grid's rightmost column (~700-841) survives portrait. Heroes proposed stacked there. Bin faces (y~560-680, center) + wall crates = dig-trigger ZONE territory (semantics honesty: zone glow -> opens edits inventory), not occlusion slots. Heroes: only 2 Beatport releases exist; third slot = none until earned. Beatport art harvested at 500sq (1400 available — fold into re-pull task w/ Spotify 640s). Hero x/y are CD PROPOSALS — Al B owns placement; 'leaned' hero treatment instead of racked = open founder call. || BIN-SEAT UPDATE: heroes moved by Al B to center bin (133sq), converted to binclip wrappers — wrapper bottom edge = clip line = bin lip (measured y=678). Drag wrapper to re-bin; drag its TOP edge up to reveal more cover. No bottom stroke/shadow by construction (clipped). 4 edit covers staged bottom-left at 166 for Al B placement (gaz-nevada / frankie-workout / quimbara / grace-jones)."
     }
   ],
   "fileToken": "d366873a-c3e6-4897-8866-5c2a84d88082"
