@@ -6,12 +6,12 @@ import { C, FONT, fmtTime } from "@/components/walls/ui";
 import { computeCover, useViewport } from "@/components/stations/useStage";
 
 /**
- * The persistent music player — a store-level object (NOT HUD): it survives every navigation,
- * including to street/door, while a track is loaded (playing or paused). It only leaves when the
- * user hits its ✕ (→ stop) or the track ends. Spawns bottom-left beside the puck, is draggable by
- * the grip on its left edge (clamped to a 16px viewport gutter), and its position persists for the
- * session. Like all content it dissolves around tweens (fade on the active scene's atRest) — the
- * AUDIO never interrupts.
+ * The persistent music player — CHROME (like the wordmark/HUD): constant, floating above the video
+ * at ALL times while a track is loaded (playing or paused), through transitions, at every station
+ * including street/door. It does NOT dissolve around tweens (the fade-in contract governs
+ * wall-pinned content, not this). It only leaves when the user hits its ✕ (→ stop) or the track
+ * ends. Spawns bottom-left beside the puck, draggable by the left-edge grip (clamped to a 16px
+ * viewport gutter), position persists for the session.
  *
  * v5 mini-player anatomy × 1.2, authored in stage px and scaled to the object-cover box.
  */
@@ -19,14 +19,9 @@ import { computeCover, useViewport } from "@/components/stations/useStage";
 const GRIP = 20; // stage px — the drag handle strip on the left
 const PLAYER = 485; // stage px — the mini-player body (v5 404 × 1.2)
 const W = GRIP + PLAYER;
-const H = 132; // stage px — approximate (two rows), for the drag clamp
+const H = 152; // stage px — the two rows fully (meta 85 + hair + transport 64 + border), for clamp
 
-export function StorePlayer({
-  atRest,
-}: {
-  /** Active scene at rest — the player is shown; during a tween it dissolves. */
-  atRest: boolean;
-}) {
+export function StorePlayer() {
   const sc = useSoundCloud();
   const { vw, vh } = useViewport();
   // Spawn bottom-left beside the puck; position persists for the session (survives navigation).
@@ -95,15 +90,12 @@ export function StorePlayer({
         left,
         top,
         width: W,
-        height: H,
+        // Height sizes to the two rows (no fixed height → the play button is never clipped).
         transform: `scale(${cover.scale})`,
         transformOrigin: "top left",
         pointerEvents: "auto",
         display: "flex",
         alignItems: "stretch",
-        // dissolve around tweens (audio keeps playing)
-        opacity: atRest ? 1 : 0,
-        transition: atRest ? "opacity 300ms ease" : "opacity 120ms ease",
       }}
     >
       {/* drag grip — vertical dots on the left edge */}

@@ -133,12 +133,11 @@ const CRATE_CONFIG: WallConfig = {
     { id: "releases", label: "RELEASES", items: RELEASES, grammar: "external" },
   ],
   defaultTabId: "edits",
-  // Edits spine, 125² — Pen frame ZCOog. Spine reads top→bottom: VIEW ALL, gaz, grace, frankie
-  // (VIEW ALL took frankie's top seat; frankie moved to the interim 4th slot).
+  // Edits spine, 125² — Pen frame ZCOog. Spine reads top→bottom: VIEW ALL, gaz, grace.
+  // (Frankie's record left the wall — he remains in the catalog/browse data, just not on S0.)
   featured: [
     { itemId: "gaz-nevada-i-c-love-affair-al-b-s-rapless-edit", x: 718, y: 212, w: 125, h: 125 },
     { itemId: "grace-jones-love-on-top-of-love-al-b-s-endless-dub-edit", x: 720, y: 371, w: 125, h: 125 },
-    { itemId: "frankie-knuckles-workout-al-b-s-fk-always-edit", x: 718, y: 531, w: 125, h: 125 },
   ],
   // Bin row — binclips (bottom clipped at the lip; 24px shadow margin; 133/131² sleeve).
   bins: [

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useRef } from "react";
 import {
   STATIONS,
   type Station,
@@ -46,7 +46,6 @@ export function StationFrame({
   activeIndex,
   goToId,
   crossfade,
-  onAtRestChange,
 }: {
   station: Station;
   /** The transition clip to play, resolved by the controller from the directed EDGE into this scene. */
@@ -56,8 +55,6 @@ export function StationFrame({
   /** Navigate to a station (the controller's tween-aware requestMove). */
   goToId: (to: StationId) => void;
   crossfade?: "in" | "out";
-  /** Report this scene's at-rest state up while it is active (drives the persistent player's fade). */
-  onAtRestChange?: (atRest: boolean) => void;
 }) {
   const hasTransition = Boolean(asset?.h264Src);
   const isActive = index === activeIndex;
@@ -78,11 +75,6 @@ export function StationFrame({
 
   // Content walls (Mixes / Vibes / Crate) get the composited content layer over the held frame.
   const isWall = Boolean(getWallConfig(station.id));
-
-  // Report at-rest up while active (the store player dissolves around tweens like all content).
-  useEffect(() => {
-    if (isActive) onAtRestChange?.(atRest);
-  }, [isActive, atRest, onAtRestChange]);
 
   const showEntryStill = isDoor && isWalkUpEdge && phase === "idle";
 

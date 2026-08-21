@@ -14,7 +14,7 @@ const POS_5C = { x: 610, y: 150 };
 export function detailCardStage(item: WallItem): { x: number; y: number; w: number; h: number } {
   const isSpotify = item.kind === "playlist" || item.kind === "vibe";
   return isSpotify
-    ? { ...POS_5C, w: CARD_W, h: 560 }
+    ? { ...POS_5C, w: CARD_W, h: 730 } // small thumb + tall (352) embed → tall card
     : { ...POS_5B, w: CARD_W, h: 430 };
 }
 
@@ -89,8 +89,9 @@ export function DetailCard({
   const isSC = !isSpotify && !isRelease;
   const playingThis = sc.current?.id === item.id && sc.isPlaying;
 
-  const coverSize = isSpotify ? 178 : 192;
-  const titleSize = isSpotify ? 36 : 38;
+  // Playlist/Vibes (5c): small thumb in the top row + a TALL embed below (tracklist visible).
+  const coverSize = isSpotify ? 120 : 192;
+  const titleSize = isSpotify ? 34 : 38;
   const meta = metaText(item);
 
   return (
@@ -163,9 +164,9 @@ export function DetailCard({
           {item.blurb}
         </div>
 
-        {/* Spotify embed (5c) */}
+        {/* Spotify embed (5c) — tall variant so the tracklist is visible + scrollable in-embed. */}
         {isSpotify && item.spotifyEmbedUrl ? (
-          <SpotifyEmbed embedUrl={item.spotifyEmbedUrl} />
+          <SpotifyEmbed embedUrl={item.spotifyEmbedUrl} height={352} />
         ) : null}
 
         {/* actions */}

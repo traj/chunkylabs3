@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useLenis } from "lenis/react";
 import {
   STATIONS,
@@ -31,7 +31,6 @@ import { StorePlayer } from "@/components/nav/StorePlayer";
 const KEEP_WINDOW = 1;
 const CROSSFADE_EDGES = new Set<string>(["door->street", "counter->street"]);
 const stationIndex = (id: StationId) => STATIONS.findIndex((s) => s.id === id);
-const ROOMS: readonly StationId[] = ["counter", "left-bins", "right-bins", "mixtape-shelf"];
 
 /** A single resolvable move (direct/express/reverse/forward — all are exits entries). */
 function hasEdge(from: StationId, to: StationId): boolean {
@@ -54,7 +53,6 @@ export function StoreWalkthrough() {
   const [cameFrom, setCameFrom] = useState<StationId | null>(null);
   const [expressAsset, setExpressAsset] = useState<TransitionAsset | null>(null);
   const [keyHintDismissed, setKeyHintDismissed] = useState(false);
-  const [activeAtRest, setActiveAtRest] = useState(false);
 
   // Route state (refs so the timed hop-release reads the latest values).
   const activeRef = useRef(0);
@@ -148,14 +146,6 @@ export function StoreWalkthrough() {
     cameFrom != null && CROSSFADE_EDGES.has(`${cameFrom}->${STATIONS[active].id}`);
 
   const activeId = STATIONS[active].id;
-  const isInterior = activeId !== "street" && activeId !== "door";
-  // Full compass: all three OTHER rooms are live at every interior station; the street portal is
-  // live only where it is a direct edge (the counter).
-  const liveTargets = useMemo(() => {
-    const s = new Set(ROOMS.filter((r) => r !== activeId));
-    if (hasEdge(activeId, "street")) s.add("street");
-    return s;
-  }, [activeId]);
   const dismissKeyHint = useCallback(() => setKeyHintDismissed(true), []);
 
   return (
@@ -182,27 +172,23 @@ export function StoreWalkthrough() {
                 activeIndex={active}
                 goToId={requestMove}
                 crossfade={crossfade}
-                onAtRestChange={setActiveAtRest}
               />
             );
           })}
 
-          {/* Interior HUD + nav puck (never on street/door). */}
-          {isInterior ? (
-            <div className="pointer-events-none absolute inset-0 z-40">
-              <StoreHud
-                currentId={activeId}
-                reachable={liveTargets}
-                onMove={requestMove}
-                keyHintDismissed={keyHintDismissed}
-                onDismissKeyHint={dismissKeyHint}
-              />
-            </div>
-          ) : null}
+          {/* HUD + nav puck — travels to EVERY station (interior room-map + entry vertical variant). */}
+          <div className="pointer-events-none absolute inset-0 z-40">
+            <StoreHud
+              currentId={activeId}
+              onMove={requestMove}
+              keyHintDismissed={keyHintDismissed}
+              onDismissKeyHint={dismissKeyHint}
+            />
+          </div>
 
-          {/* Persistent player — above everything, on every station (music object, not HUD). */}
+          {/* Persistent player — chrome above everything, on every station (music object). */}
           <div className="pointer-events-none absolute inset-0 z-50">
-            <StorePlayer atRest={activeAtRest} />
+            <StorePlayer />
           </div>
         </main>
       </SoundCloudProvider>

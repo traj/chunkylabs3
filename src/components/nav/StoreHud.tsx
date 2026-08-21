@@ -1,26 +1,33 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { StationId } from "@/data/stations";
 import { StagePinned } from "@/components/walls/StagePinned";
+import { usePlaybackUnlock } from "@/components/stations/PlaybackUnlock";
 import { C, FONT } from "@/components/walls/ui";
-import { DIR_TO_STATION, NavPuck } from "./NavPuck";
+import { NavPuck, type Dir, type PuckConfig } from "./NavPuck";
 
 /**
- * Store-level interior HUD: white wordmark (TR), the functional nav puck (BL), the room title
- * (under the puck, current station name), and the one-time key hint. Rendered by StoreWalkthrough
- * for interior stations only (never street/door). Persists across counter↔walls; idle-fades the
- * puck+title after 4s; owns the arrow/WASD movement keys (ignored while a wall state is open).
+ * Store-level HUD — travels to EVERY station: the nav puck (BL), the room title (centred under the
+ * puck), the one-time key hint, and the interior-only wordmark (TR). Two puck variants:
+ *
+ *  - INTERIOR (counter/mixes/vibes/crate): the room-map compass + centre-exit to the street.
+ *  - ENTRY (street/door): vertical-only — up/down walk the entry chain; horizontals hidden.
+ *
+ * The wordmark is ABSENT on the entry scenes (the storefront's baked brand carries it); only the
+ * puck + title travel outside. Persists across navigation; idle-fades the puck+title after 4s; owns
+ * the arrow/WASD movement keys (+ E for the interior street-exit).
  */
 
 const ROOM_TITLE: Partial<Record<StationId, string>> = {
+  street: "STREET",
+  door: "DOOR",
   counter: "COUNTER",
   "left-bins": "MIXES",
   "right-bins": "CRATE",
   "mixtape-shelf": "VIBES",
 };
 
-type Dir = "up" | "down" | "left" | "right";
 const KEY_TO_DIR: Record<string, Dir> = {
   arrowup: "up",
   w: "up",
@@ -32,21 +39,52 @@ const KEY_TO_DIR: Record<string, Dir> = {
   d: "right",
 };
 
+const NONE = { target: null } as const;
+
+/** The puck's arm/centre map for a station — variant-aware. */
+function puckConfigFor(currentId: StationId): PuckConfig {
+  // ENTRY (street/door): the chain runs on up/down; horizontals + centre are inert.
+  if (currentId === "street") {
+    return { variant: "entry", up: { target: "door" }, down: NONE, left: NONE, right: NONE, center: NONE };
+  }
+  if (currentId === "door") {
+    return {
+      variant: "entry",
+      up: { target: "counter" },
+      down: { target: "street" },
+      left: NONE,
+      right: NONE,
+      center: NONE,
+    };
+  }
+  // INTERIOR: the fixed room map; current room is pink; centre exits to the street.
+  return {
+    variant: "interior",
+    up: { target: "counter", isSelf: currentId === "counter" },
+    down: { target: "mixtape-shelf", isSelf: currentId === "mixtape-shelf" },
+    left: { target: "left-bins", isSelf: currentId === "left-bins" },
+    right: { target: "right-bins", isSelf: currentId === "right-bins" },
+    center: { target: "street" },
+  };
+}
+
 export function StoreHud({
   currentId,
-  reachable,
   onMove,
   keyHintDismissed,
   onDismissKeyHint,
 }: {
   currentId: StationId;
-  reachable: ReadonlySet<StationId>;
   onMove: (to: StationId) => void;
   keyHintDismissed: boolean;
   onDismissKeyHint: () => void;
 }) {
   const [idle, setIdle] = useState(false);
   const lastActivityRef = useRef(0);
+  const { markUnlocked } = usePlaybackUnlock();
+
+  const config = useMemo(() => puckConfigFor(currentId), [currentId]);
+  const isEntry = config.variant === "entry";
 
   // Any pointer/key activity (or a station change) resets the idle clock.
   const bump = useCallback(() => {
@@ -80,49 +118,59 @@ export function StoreHud({
 
   const move = useCallback(
     (to: StationId) => {
-      // A direction always navigates now — a press with a wall panel open dissolves it and goes
-      // (item 2). Esc still walks back out without moving (handled per-wall).
+      markUnlocked(); // the puck can be the first gesture on the street — prime media autoplay
       onDismissKeyHint();
       bump();
       onMove(to);
     },
-    [onMove, onDismissKeyHint, bump],
+    [onMove, onDismissKeyHint, bump, markUnlocked],
   );
 
-  // Arrow / WASD movement keys (ignored while a wall state is open; Esc is the wall walk, elsewhere).
+  // Keyboard mirrors every puck mapping: arrows/WASD → arm targets; E → the interior street-exit.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      const dir = KEY_TO_DIR[e.key.toLowerCase()];
+      const key = e.key.toLowerCase();
+      if (key === "e") {
+        const c = config.center.target;
+        if (c) {
+          e.preventDefault();
+          move(c);
+        }
+        return;
+      }
+      const dir = KEY_TO_DIR[key];
       if (!dir) return;
-      const target = DIR_TO_STATION[dir];
-      if (target !== currentId && reachable.has(target)) {
+      const arm = config[dir];
+      if (arm.target && !arm.isSelf) {
         e.preventDefault();
-        move(target);
+        move(arm.target);
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [reachable, currentId, move]);
+  }, [config, move]);
 
   const dim = idle ? 0.45 : 1;
   const showHint = !keyHintDismissed;
 
   return (
     <>
-      {/* Wordmark TR — white @ 45% (recolour the pink source via filter). Not idle-affected. */}
-      <StagePinned x={1666} y={44} w={196} h={21} z={30}>
-        <img
-          src="/hud/chunky-wordmark.png"
-          alt="chunkylabs"
-          style={{
-            display: "block",
-            width: 196,
-            height: "auto",
-            opacity: 0.45,
-            filter: "brightness(0) invert(1)",
-          }}
-        />
-      </StagePinned>
+      {/* Wordmark TR — INTERIOR ONLY (the storefront's baked brand carries the entry scenes). */}
+      {!isEntry ? (
+        <StagePinned x={1666} y={44} w={196} h={21} z={30}>
+          <img
+            src="/hud/chunky-wordmark.png"
+            alt="chunkylabs"
+            style={{
+              display: "block",
+              width: 196,
+              height: "auto",
+              opacity: 0.45,
+              filter: "brightness(0) invert(1)",
+            }}
+          />
+        </StagePinned>
+      ) : null}
 
       {/* Nav puck BL — idle-fades; any pointer activity over it restores. */}
       <StagePinned x={58} y={922} w={100} h={100} z={31} style={{ pointerEvents: "auto" }}>
@@ -131,12 +179,11 @@ export function StoreHud({
           onMouseMove={bump}
           style={{ opacity: dim, transition: "opacity .5s ease" }}
         >
-          <NavPuck currentId={currentId} reachable={reachable} onMove={move} />
+          <NavPuck config={config} onMove={move} />
         </div>
       </StagePinned>
 
-      {/* Room title under the puck — centered on the puck's vertical axis (box = puck x/width,
-          text-align centre). Archivo Black 12, white; idle-fades with the puck. */}
+      {/* Room title under the puck — centred on the puck's vertical axis. */}
       <StagePinned x={58} y={1030} w={100} h={20} z={31}>
         <div
           style={{
