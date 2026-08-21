@@ -147,6 +147,26 @@ animation — it is **not** what advances the store.
 - **After loading async content** (video/images/fonts), call `ScrollTrigger.refresh()` so
   trigger positions stay correct.
 
+## Design assets & surfaces
+
+- **`design/plates/` is the ONLY sanctioned background for design work** (Figma, Pen, DD,
+  comps). One color-correct native-res PNG per rest state + MANIFEST.md (extraction commands,
+  color-contract rationale). Never design against Meshy source stills (the gen repaints them)
+  or delivery posters (compressed, mixed extraction provenance). If a rest state changes,
+  re-extract the plate with the manifest's pinned-matrix command — never a default-matrix grab.
+- **Shipped view = plate + scrim.** The store paints a scrim gradient over the video that is
+  not in the plates; composite it before any legibility judgment. (Scrim overlay layer for
+  design surfaces: open thread.)
+- **Live HTML design comps** live in `docs/reference/` (versioned, e.g. `nav-puck-v9.html`);
+  they reference plates by relative path and open via `file://` in real Chrome. Do not verify
+  them in Pen's integrated browser (it tiles fixed-width pages and mis-targets elements).
+
+## Verification environment
+
+- Chrome extension instances reach the dev server via **LAN IP, not localhost**.
+- **Browser 1 (aeac6079…) is a throttled relay** — no input injection, media won't decode.
+  Use **Browser 2 (ee3e85ab…)** for any browser verification.
+
 ## Never do this
 
 These are non-negotiable, drawn directly from the research doc. Do not relax them without

@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>chunkylabs3 — nav puck v1 (live comp)</title>
+<style>
+  :root{
+    --pink:#FF4D63; --pink-soft:#FF8B98; --cream:#F7EFE2;
+    --hairline:#FFFFFF; --ink:#120C08; --amber:#C9954F; --dim:#9A8570;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:#0a0705;display:flex;flex-direction:column;align-items:center;gap:16px;padding:32px;font-family:'Instrument Sans',system-ui,sans-serif}
+  .stage{position:relative;width:1600px;height:900px;overflow:hidden;flex:none}
+  .stage img.plate{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+
+  /* ---------- PUCK ---------- */
+  .puck{
+    position:absolute;left:48px;bottom:48px;width:72px;height:72px;
+    opacity:1;transition:opacity .6s ease;cursor:pointer;
+  }
+  .puck.idle{opacity:.3}
+  .puck:hover{opacity:1}
+
+  /* smoke disc — chrome family: same graduated-smoke recipe as mini-player */
+  .disc{
+    position:absolute;inset:0;border-radius:50%;
+    background:rgba(22,13,8,.5);
+    backdrop-filter:blur(6px) saturate(.9) brightness(.9);
+    -webkit-backdrop-filter:blur(6px) saturate(.9) brightness(.9);
+  }
+  /* spinning group: grooves + label ride the record; ticks stay world-fixed */
+  .spin{position:absolute;inset:0;transition:transform .9s cubic-bezier(.22,.9,.28,1)}
+  .spin svg{display:block}
+
+  /* compass tick ring — fixed, never rotates */
+  .ticks{position:absolute;inset:0;pointer-events:none}
+  .tick{transition:fill .4s ease}
+
+  /* hover half-affordances */
+  .half{position:absolute;top:0;height:100%;width:50%;display:flex;align-items:center;opacity:0;transition:opacity .25s ease;pointer-events:none}
+  .half.l{left:-2px;justify-content:flex-start}
+  .half.r{right:-2px;justify-content:flex-end}
+  .half span{color:var(--cream);font-size:14px;line-height:1;transform:translateY(-1px)}
+  .puck:hover .half{opacity:.7}
+
+  /* annotation strip (outside stage, not part of the comp) */
+  .meta{color:var(--dim);font-size:13px;letter-spacing:.08em;text-align:center;max-width:1600px}
+  .meta b{color:var(--cream);font-weight:500}
+</style>
+</head>
+<body>
+<div class="stage">
+  <img class="plate" src="../../design/plates/plate-counter.png" alt="">
+  <div class="puck" id="puck">
+    <div class="disc"></div>
+    <div class="spin" id="spin">
+      <svg width="72" height="72" viewBox="0 0 72 72">
+        <!-- grooves: hairline rings, record language -->
+        <circle cx="36" cy="36" r="33" fill="none" stroke="rgba(255,255,255,.22)" stroke-width="1"/>
+        <circle cx="36" cy="36" r="27" fill="none" stroke="rgba(255,255,255,.12)" stroke-width="1"/>
+        <circle cx="36" cy="36" r="22" fill="none" stroke="rgba(255,255,255,.09)" stroke-width="1"/>
+        <circle cx="36" cy="36" r="17" fill="none" stroke="rgba(255,255,255,.12)" stroke-width="1"/>
+        <!-- label -->
+        <circle cx="36" cy="36" r="9" fill="#FF4D63"/>
+        <circle cx="36" cy="36" r="1.6" fill="#120C08"/>
+        <!-- one faint label notch so rotation is readable on the label itself -->
+        <rect x="35.2" y="27.5" width="1.6" height="4" rx=".8" fill="rgba(18,12,8,.55)"/>
+      </svg>
+    </div>
+    <div class="ticks">
+      <svg width="72" height="72" viewBox="0 0 72 72">
+        <rect id="tN" class="tick" x="34.75" y="1"  width="2.5" height="7" rx="1.25"/>
+        <rect id="tE" class="tick" x="64" y="34.75" width="7" height="2.5" rx="1.25"/>
+        <rect id="tS" class="tick" x="34.75" y="64" width="2.5" height="7" rx="1.25"/>
+        <rect id="tW" class="tick" x="1"  y="34.75" width="7" height="2.5" rx="1.25"/>
+      </svg>
+    </div>
+    <div class="half l"><span>‹</span></div>
+    <div class="half r"><span>›</span></div>
+  </div>
+</div>
+<div class="meta">
+  NAV PUCK v1 · <b>click left / right half</b> to rotate the ring (record spins with the move, compass ticks stay world-fixed) ·
+  pink tick = facing wall · cream = one step away · faint = two steps ·
+  idle-fades to 30% after 4s, wakes on hover/move · N=Counter W=Mixes E=Crate S=Vibes
+</div>
+<script>
+  // rotational ring model: facing index 0=N(Counter) 1=E(Crate) 2=S(Vibes) 3=W(Mixes)
+  const ticks = { 0: tN, 1: tE, 2: tS, 3: tW };
+  const PINK = '#FF4D63', CREAM_1 = 'rgba(247,239,226,.6)', CREAM_2 = 'rgba(247,239,226,.22)';
+  let facing = 0;          // start at counter, facing N
+  let angle = 0;           // cumulative disc rotation
+  let idleTimer = null;
+
+  function paintTicks(){
+    for (let i = 0; i < 4; i++){
+      const dist = Math.min((i - facing + 4) % 4, (facing - i + 4) % 4); // ring distance
+      ticks[i].setAttribute('fill', dist === 0 ? PINK : dist === 1 ? CREAM_1 : CREAM_2);
+    }
+  }
+  function wake(){
+    puck.classList.remove('idle');
+    clearTimeout(idleTimer);
+    idleTimer = setTimeout(() => puck.classList.add('idle'), 4000);
+  }
+  function rotate(dir){ // +1 = right/clockwise, -1 = left
+    facing = (facing + dir + 4) % 4;
+    angle += dir * 90;
+    spin.style.transform = `rotate(${angle}deg)`;
+    paintTicks();
+    wake();
+  }
+  puck.addEventListener('click', e => {
+    const mid = puck.getBoundingClientRect();
+    rotate(e.clientX < mid.left + mid.width / 2 ? -1 : 1);
+  });
+  puck.addEventListener('mousemove', wake);
+  window.addEventListener('keydown', e => {
+    if (e.key === 'ArrowLeft' || e.key === 'a') rotate(-1);
+    if (e.key === 'ArrowRight' || e.key === 'd') rotate(1);
+  });
+  paintTicks();
+  wake();
+</script>
+</body>
+</html>

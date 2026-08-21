@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>chunkylabs3 — nav pad v3 (full-store live comp)</title>
+<style>
+  :root{ --pink:#FF4D63; --cream:#F7EFE2; --ink:#120C08; --dim:#9A8570; }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:#0a0705;display:flex;flex-direction:column;align-items:center;gap:16px;padding:32px;font-family:'Instrument Sans',system-ui,sans-serif}
+  .stage{position:relative;width:1600px;height:900px;overflow:hidden;flex:none}
+  .plate{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transition:opacity .3s ease}
+  #plateB{opacity:0}
+
+  /* ---------- NAV PAD ---------- */
+  .pad{
+    position:absolute;left:48px;bottom:48px;width:88px;height:88px;
+    opacity:1;transition:opacity .6s ease;
+  }
+  .pad.idle{opacity:.3}
+  .pad:hover{opacity:1}
+
+  .dir{position:absolute;width:24px;height:26px;cursor:pointer;transition:opacity .3s ease,transform .12s ease}
+  .dir svg{display:block;width:100%;height:100%}
+  .dir polygon{fill:#F7EFE2;transition:fill .2s ease}
+  .dir.on{opacity:.65}
+  .dir.on:hover{opacity:1;transform:scale(1.15)}
+  .dir.on:active{transform:scale(.95)}
+  .dir.off{opacity:.09;pointer-events:none}
+
+  .up   {left:32px;top:0;height:24px;width:26px}
+  .down {left:32px;bottom:0;height:24px;width:26px}
+  .left {left:0;top:32px}
+  .right{right:0;top:32px}
+
+  /* center: the one vinyl wink left — a record-label dot */
+  .dot{position:absolute;left:39px;top:39px;width:10px;height:10px;border-radius:50%;
+       background:var(--pink);box-shadow:inset 0 0 0 2.5px rgba(18,12,8,.0)}
+  .dot::after{content:"";position:absolute;left:3.4px;top:3.4px;width:3.2px;height:3.2px;border-radius:50%;background:rgba(18,12,8,.6)}
+
+  /* station label — quiet game-HUD readout */
+  .where{
+    position:absolute;left:48px;bottom:20px;width:88px;text-align:center;
+    color:var(--cream);font-size:10px;letter-spacing:.28em;opacity:.55;
+    text-transform:uppercase;transition:opacity .6s ease;
+  }
+  .pad.idle + .where{opacity:.18}
+
+  .meta{color:var(--dim);font-size:13px;letter-spacing:.08em;text-align:center;max-width:1600px}
+  .meta b{color:var(--cream);font-weight:500}
+</style>
+</head>
+<body>
+<div class="stage">
+  <img class="plate" id="plateA" src="../../design/plates/plate-street.png" alt="">
+  <img class="plate" id="plateB" src="" alt="">
+
+  <div class="pad" id="pad">
+    <div class="dir up" id="dUp"><svg viewBox="0 0 26 24"><polygon points="13,0 26,24 0,24"/></svg></div>
+    <div class="dir down" id="dDown"><svg viewBox="0 0 26 24"><polygon points="0,0 26,0 13,24"/></svg></div>
+    <div class="dir left" id="dLeft"><svg viewBox="0 0 24 26"><polygon points="24,0 24,26 0,13"/></svg></div>
+    <div class="dir right" id="dRight"><svg viewBox="0 0 24 26"><polygon points="0,0 24,13 0,26"/></svg></div>
+    <div class="dot"></div>
+  </div>
+  <div class="where" id="where">STREET</div>
+</div>
+<div class="meta">
+  NAV PAD v3 · full store on real plates · <b>▲ forward · ▼ back · ◀ ▶ rotate</b> · lit = available, dark = not ·
+  exit the store with ▼ at the counter · WASD / arrows work · crossfades stand in for video · idle 30% after 4s
+</div>
+<script>
+  // station graph — mirrors the engine: entry spine + rotational ring (N counter → W mixes → S vibes → E crate)
+  const G = {
+    street : { up:'door',    down:null,     left:null,    right:null,   label:'STREET'  },
+    door   : { up:'counter', down:'street', left:null,    right:null,   label:'DOOR'    },
+    counter: { up:null,      down:'door',   left:'mixes', right:'crate',label:'COUNTER' },
+    mixes  : { up:null,      down:null,     left:'vibes', right:'counter',label:'MIXES · W' },
+    vibes  : { up:null,      down:null,     left:'crate', right:'mixes',label:'VIBES · S' },
+    crate  : { up:null,      down:null,     left:'counter',right:'vibes',label:'CRATE · E' }
+  };
+  const plates = {};
+  for (const k of Object.keys(G)) { plates[k] = `../../design/plates/plate-${k}.png`; }
+
+  let cur = 'street', showingA = true, busy = false, idleTimer = null;
+  const dirs = { up: dUp, down: dDown, left: dLeft, right: dRight };
+
+  function paint(){
+    for (const [d, el] of Object.entries(dirs)){
+      el.className = 'dir ' + d + (G[cur][d] ? ' on' : ' off');
+    }
+    where.textContent = G[cur].label;
+  }
+  function wake(){
+    pad.classList.remove('idle');
+    clearTimeout(idleTimer);
+    idleTimer = setTimeout(() => pad.classList.add('idle'), 4000);
+  }
+  function go(d){
+    const next = G[cur][d];
+    if (!next || busy) return;
+    busy = true;
+    const inEl  = showingA ? plateB : plateA;
+    const outEl = showingA ? plateA : plateB;
+    inEl.src = plates[next];
+    inEl.style.opacity = 1;
+    outEl.style.opacity = 0;
+    showingA = !showingA;
+    cur = next;
+    paint(); wake();
+    setTimeout(() => busy = false, 320);
+  }
+  dUp.addEventListener('click', () => go('up'));
+  dDown.addEventListener('click', () => go('down'));
+  dLeft.addEventListener('click', () => go('left'));
+  dRight.addEventListener('click', () => go('right'));
+  pad.addEventListener('mousemove', wake);
+  window.addEventListener('keydown', e => {
+    const k = e.key.toLowerCase();
+    if (k === 'arrowup'    || k === 'w') go('up');
+    if (k === 'arrowdown'  || k === 's') go('down');
+    if (k === 'arrowleft'  || k === 'a') go('left');
+    if (k === 'arrowright' || k === 'd') go('right');
+  });
+  paint(); wake();
+</script>
+</body>
+</html>

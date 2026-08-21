@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>chunkylabs3 — nav puck v2 (live comp)</title>
+<style>
+  :root{
+    --pink:#FF4D63; --pink-soft:#FF8B98; --cream:#F7EFE2;
+    --hairline:#FFFFFF; --ink:#120C08; --amber:#C9954F; --dim:#9A8570;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:#0a0705;display:flex;flex-direction:column;align-items:center;gap:16px;padding:32px;font-family:'Instrument Sans',system-ui,sans-serif}
+  .stage{position:relative;width:1600px;height:900px;overflow:hidden;flex:none}
+  .stage img.plate{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+
+  /* ---------- PUCK ASSEMBLY: [◀] [disc] [▶] ---------- */
+  .puck{
+    position:absolute;left:40px;bottom:48px;
+    display:flex;align-items:center;gap:8px;
+    opacity:1;transition:opacity .6s ease;
+  }
+  .puck.idle{opacity:.3}
+  .puck:hover{opacity:1}
+
+  .arrow{width:20px;height:22px;cursor:pointer;opacity:.35;transition:opacity .25s ease,transform .15s ease;flex:none}
+  .arrow:hover{opacity:1;transform:scale(1.12)}
+  .arrow svg{display:block}
+
+  .discwrap{position:relative;width:72px;height:72px;cursor:pointer;flex:none}
+
+  /* vinyl body — darker smoke so it reads as a record, still chrome family */
+  .disc{
+    position:absolute;inset:0;border-radius:50%;
+    background:rgba(16,10,7,.72);
+    backdrop-filter:blur(6px) saturate(.9) brightness(.9);
+    -webkit-backdrop-filter:blur(6px) saturate(.9) brightness(.9);
+  }
+  .spin{position:absolute;inset:0;transition:transform .9s cubic-bezier(.22,.9,.28,1)}
+  .fixed{position:absolute;inset:0;pointer-events:none}
+  .tick{transition:fill .4s ease}
+</style>
+</head>
+<body>
+<div class="stage">
+  <img class="plate" src="../../design/plates/plate-counter.png" alt="">
+
+  <div class="puck" id="puck">
+    <div class="arrow" id="arrL">
+      <svg viewBox="0 0 20 22"><polygon points="20,0 20,22 2,11" fill="#F7EFE2"/></svg>
+    </div>
+
+    <div class="discwrap" id="discwrap">
+      <div class="disc"></div>
+
+      <!-- SPINNING: grooves + label ride the record -->
+      <div class="spin" id="spin">
+        <svg width="72" height="72" viewBox="0 0 72 72">
+          <!-- dense fine grooves = vinyl -->
+          <g fill="none" stroke="#FFFFFF">
+            <circle cx="36" cy="36" r="34"   stroke-opacity=".28" stroke-width="1.2"/>
+            <circle cx="36" cy="36" r="31.5" stroke-opacity=".07" stroke-width=".8"/>
+            <circle cx="36" cy="36" r="29.5" stroke-opacity=".10" stroke-width=".8"/>
+            <circle cx="36" cy="36" r="27.5" stroke-opacity=".06" stroke-width=".8"/>
+            <circle cx="36" cy="36" r="25.5" stroke-opacity=".10" stroke-width=".8"/>
+            <circle cx="36" cy="36" r="23.5" stroke-opacity=".06" stroke-width=".8"/>
+            <circle cx="36" cy="36" r="21.5" stroke-opacity=".09" stroke-width=".8"/>
+            <circle cx="36" cy="36" r="19.5" stroke-opacity=".06" stroke-width=".8"/>
+            <circle cx="36" cy="36" r="17.5" stroke-opacity=".09" stroke-width=".8"/>
+            <circle cx="36" cy="36" r="15.5" stroke-opacity=".06" stroke-width=".8"/>
+            <!-- run-out gap then label -->
+            <circle cx="36" cy="36" r="12.5" stroke-opacity=".14" stroke-width=".8"/>
+          </g>
+          <!-- label: pink with press ring, spindle hole, index notch -->
+          <circle cx="36" cy="36" r="10.5" fill="#FF4D63"/>
+          <circle cx="36" cy="36" r="10.5" fill="none" stroke="rgba(18,12,8,.35)" stroke-width="1"/>
+          <circle cx="36" cy="36" r="8" fill="none" stroke="rgba(18,12,8,.18)" stroke-width=".8"/>
+          <circle cx="36" cy="36" r="1.8" fill="#120C08"/>
+          <rect x="35.1" y="26.2" width="1.8" height="4.6" rx=".9" fill="rgba(18,12,8,.55)"/>
+        </svg>
+      </div>
+
+      <!-- FIXED: specular sheen (light stays put while grooves spin) + compass ticks -->
+      <div class="fixed">
+        <svg width="72" height="72" viewBox="0 0 72 72">
+          <defs>
+            <filter id="soft" x="-40%" y="-40%" width="180%" height="180%">
+              <feGaussianBlur stdDeviation="2.2"/>
+            </filter>
+            <linearGradient id="fadeA" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#FFF" stop-opacity=".22"/>
+              <stop offset="1" stop-color="#FFF" stop-opacity="0"/>
+            </linearGradient>
+          </defs>
+          <!-- two opposing sheen arcs, classic vinyl highlight -->
+          <path d="M 14 20 A 27 27 0 0 1 30 9.5" fill="none" stroke="url(#fadeA)" stroke-width="7" stroke-linecap="round" filter="url(#soft)"/>
+          <path d="M 58 52 A 27 27 0 0 1 42 62.5" fill="none" stroke="url(#fadeA)" stroke-width="7" stroke-linecap="round" filter="url(#soft)"/>
+          <!-- compass ticks — world-fixed -->
+          <rect id="tN" class="tick" x="34.6" y="0"  width="2.8" height="7.5" rx="1.4"/>
+          <rect id="tE" class="tick" x="64.5" y="34.6" width="7.5" height="2.8" rx="1.4"/>
+          <rect id="tS" class="tick" x="34.6" y="64.5" width="2.8" height="7.5" rx="1.4"/>
+          <rect id="tW" class="tick" x="0"  y="34.6" width="7.5" height="2.8" rx="1.4"/>
+        </svg>
+      </div>
+    </div>
+
+    <div class="arrow" id="arrR">
+      <svg viewBox="0 0 20 22"><polygon points="0,0 0,22 18,11" fill="#F7EFE2"/></svg>
+    </div>
+  </div>
+</div>
+<div class="meta" style="color:#9A8570;font-size:13px;letter-spacing:.08em;text-align:center;max-width:1600px">
+  NAV PUCK v2 · triangles or disc-halves rotate · sheen fixed, grooves spin · pink tick = facing · cream = one step · faint = two ·
+  idle 30% after 4s · arrows/A·D work
+</div>
+<script>
+  const ticks = { 0: tN, 1: tE, 2: tS, 3: tW };
+  const PINK = '#FF4D63', CREAM_1 = 'rgba(247,239,226,.65)', CREAM_2 = 'rgba(247,239,226,.22)';
+  let facing = 0, angle = 0, idleTimer = null;
+
+  function paintTicks(){
+    for (let i = 0; i < 4; i++){
+      const dist = Math.min((i - facing + 4) % 4, (facing - i + 4) % 4);
+      ticks[i].setAttribute('fill', dist === 0 ? PINK : dist === 1 ? CREAM_1 : CREAM_2);
+    }
+  }
+  function wake(){
+    puck.classList.remove('idle');
+    clearTimeout(idleTimer);
+    idleTimer = setTimeout(() => puck.classList.add('idle'), 4000);
+  }
+  function rotate(dir){
+    facing = (facing + dir + 4) % 4;
+    angle += dir * 90;
+    spin.style.transform = `rotate(${angle}deg)`;
+    paintTicks(); wake();
+  }
+  arrL.addEventListener('click', () => rotate(-1));
+  arrR.addEventListener('click', () => rotate(1));
+  discwrap.addEventListener('click', e => {
+    const r = discwrap.getBoundingClientRect();
+    rotate(e.clientX < r.left + r.width / 2 ? -1 : 1);
+  });
+  puck.addEventListener('mousemove', wake);
+  window.addEventListener('keydown', e => {
+    if (e.key === 'ArrowLeft' || e.key === 'a') rotate(-1);
+    if (e.key === 'ArrowRight' || e.key === 'd') rotate(1);
+  });
+  paintTicks(); wake();
+</script>
+</body>
+</html>

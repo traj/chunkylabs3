@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>chunkylabs3 — nav pad v9 (taller caps, gapped, STREET/STORE)</title>
+<style>
+  :root{ --pink:#FF4D63; --cream:#F7EFE2; --ink:#120C08; --dim:#9A8570; }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:#0a0705;display:flex;flex-direction:column;align-items:center;gap:16px;padding:32px;font-family:'Instrument Sans',system-ui,sans-serif}
+  .stage{position:relative;width:1600px;height:900px;overflow:hidden;flex:none}
+  .plate{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transition:opacity .22s ease}
+  #plateB{opacity:0}
+
+  /* geometry: 48 square + 4 gap + 22 caps → 100×100 assembly */
+  .pad{
+    position:absolute;left:48px;bottom:44px;width:100px;height:100px;
+    opacity:1;transition:opacity .6s ease;
+  }
+  .pad.idle{opacity:.3}
+  .pad:hover{opacity:1}
+
+  .dir{position:absolute;cursor:pointer;transition:opacity .3s ease}
+  .dir svg{display:block;width:100%;height:100%}
+  .dir polygon{fill:#F7EFE2;transition:fill .3s ease}
+  .dir.on{opacity:.55}
+  .dir.on:hover{opacity:1}
+  .dir.on:active{opacity:.8}
+  .dir.off{opacity:.07;pointer-events:none}
+  .dir.cur{opacity:.6;pointer-events:none}
+  .dir.cur polygon{fill:var(--pink)}
+  .up   {left:26px;top:0;width:48px;height:22px}
+  .down {left:26px;bottom:0;width:48px;height:22px}
+  .left {left:0;top:26px;width:22px;height:48px}
+  .right{right:0;top:26px;width:22px;height:48px}
+
+  .portal{
+    position:absolute;left:26px;top:26px;width:48px;height:48px;
+    border:1px solid rgba(255,255,255,.55);
+    cursor:pointer;overflow:hidden;
+    transition:border-color .3s ease;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .portal:hover{border-color:rgba(255,255,255,.95)}
+  .portal:active .word{transform:translateX(.08em) scale(.94)}
+  .portal .tex{
+    position:absolute;inset:0;background-size:220% auto;background-position:center 42%;
+    opacity:.35;
+  }
+  .portal .smoke{
+    position:absolute;inset:0;background:rgba(22,13,8,.55);
+    backdrop-filter:blur(2px) saturate(.9);
+    -webkit-backdrop-filter:blur(2px) saturate(.9);
+  }
+  .portal .word{
+    position:relative;color:var(--cream);font-size:9px;letter-spacing:.16em;
+    text-transform:uppercase;font-weight:500;transform:translateX(.08em);
+    transition:transform .12s ease;
+  }
+
+  .meta{color:#9A8570;font-size:13px;letter-spacing:.08em;text-align:center;max-width:1600px}
+  .meta b{color:#F7EFE2;font-weight:500}
+</style>
+</head>
+<body>
+<div class="stage">
+  <img class="plate" id="plateA" src="../../design/plates/plate-street.png" alt="">
+  <img class="plate" id="plateB" src="" alt="">
+
+  <div class="pad" id="pad">
+    <div class="dir up" id="dUp"><svg viewBox="0 0 48 22"><polygon points="0,22 48,22 24,0"/></svg></div>
+    <div class="dir down" id="dDown"><svg viewBox="0 0 48 22"><polygon points="0,0 48,0 24,22"/></svg></div>
+    <div class="dir left" id="dLeft"><svg viewBox="0 0 22 48"><polygon points="22,0 22,48 0,24"/></svg></div>
+    <div class="dir right" id="dRight"><svg viewBox="0 0 22 48"><polygon points="0,0 22,24 0,48"/></svg></div>
+    <div class="portal" id="portal">
+      <div class="tex" id="ptex"></div>
+      <div class="smoke"></div>
+      <div class="word" id="pword">STREET</div>
+    </div>
+  </div>
+</div>
+<div class="meta">
+  NAV PAD v9 · caps taller (48×22) with 4px air off the square · center names its destination: <b>STREET</b> inside, <b>STORE</b> outside ·
+  compass rose: ▲ counter ◀ mixes ▶ crate ▼ vibes · pink = here · WASD · E/Enter · idle 30%
+</div>
+<script>
+  const RING = ['counter','crate','vibes','mixes'];
+  const COMPASS = { up:'counter', left:'mixes', right:'crate', down:'vibes' };
+  const INSIDE = ['counter','mixes','vibes','crate'];
+  const SPINE = {
+    street : { up:'door',    down:null },
+    door   : { up:'counter', down:'street' }
+  };
+  const OUT = { counter:['door','street'], mixes:['counter','door','street'], crate:['counter','door','street'], vibes:['counter','door','street'], door:['street'] };
+  const IN  = { street:['door','counter'] };
+
+  const plates = {};
+  for (const k of [...INSIDE, 'street', 'door']) plates[k] = `../../design/plates/plate-${k}.png`;
+
+  let cur = 'street', showingA = true, busy = false, idleTimer = null;
+  const btns = { up: dUp, down: dDown, left: dLeft, right: dRight };
+
+  function paint(){
+    const inside = INSIDE.includes(cur);
+    for (const [d, btn] of Object.entries(btns)){
+      btn.classList.remove('on','off','cur');
+      if (inside){
+        btn.classList.add(COMPASS[d] === cur ? 'cur' : 'on');
+      } else {
+        btn.classList.add(SPINE[cur] && SPINE[cur][d] ? 'on' : 'off');
+      }
+    }
+    const inLike = inside || cur === 'door';
+    ptex.style.backgroundImage = `url(${inLike ? plates.street : plates.counter})`;
+    pword.textContent = inLike ? 'STREET' : 'STORE';
+  }
+  function wake(){
+    pad.classList.remove('idle');
+    clearTimeout(idleTimer);
+    idleTimer = setTimeout(() => pad.classList.add('idle'), 4000);
+  }
+  function swap(to, ms){
+    const inEl  = showingA ? plateB : plateA;
+    const outEl = showingA ? plateA : plateB;
+    inEl.style.transitionDuration = ms + 'ms';
+    outEl.style.transitionDuration = ms + 'ms';
+    inEl.src = plates[to];
+    inEl.style.opacity = 1;
+    outEl.style.opacity = 0;
+    showingA = !showingA;
+    cur = to;
+  }
+  function chain(route, ms){
+    busy = true; wake();
+    let i = 0;
+    (function step(){
+      swap(route[i], ms);
+      paint();
+      i++;
+      if (i < route.length) setTimeout(step, ms + 40);
+      else setTimeout(() => busy = false, ms + 40);
+    })();
+  }
+  function ringPath(from, to){
+    const a = RING.indexOf(from), b = RING.indexOf(to);
+    const cw = (b - a + 4) % 4, ccw = (a - b + 4) % 4;
+    const path = [];
+    if (cw <= ccw){ for (let s = 1; s <= cw; s++) path.push(RING[(a + s) % 4]); }
+    else { for (let s = 1; s <= ccw; s++) path.push(RING[(a - s + 4) % 4]); }
+    return path;
+  }
+  function press(d){
+    if (busy) return;
+    if (INSIDE.includes(cur)){
+      const target = COMPASS[d];
+      if (target === cur) return;
+      chain(ringPath(cur, target), 240);
+    } else {
+      const next = SPINE[cur] && SPINE[cur][d];
+      if (!next) return;
+      chain([next], 300);
+    }
+  }
+  function usePortal(){
+    if (busy) return;
+    const route = (INSIDE.includes(cur) || cur === 'door') ? OUT[cur] : IN[cur];
+    if (route) chain(route, 220);
+  }
+  dUp.addEventListener('click', () => press('up'));
+  dDown.addEventListener('click', () => press('down'));
+  dLeft.addEventListener('click', () => press('left'));
+  dRight.addEventListener('click', () => press('right'));
+  portal.addEventListener('click', usePortal);
+  pad.addEventListener('mousemove', wake);
+  window.addEventListener('keydown', e => {
+    const k = e.key.toLowerCase();
+    if (k === 'arrowup'    || k === 'w') press('up');
+    if (k === 'arrowdown'  || k === 's') press('down');
+    if (k === 'arrowleft'  || k === 'a') press('left');
+    if (k === 'arrowright' || k === 'd') press('right');
+    if (k === 'e' || k === 'enter') usePortal();
+  });
+  paint(); wake();
+</script>
+</body>
+</html>

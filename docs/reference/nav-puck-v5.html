@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>chunkylabs3 — nav pad v5 (portal center)</title>
+<style>
+  :root{ --pink:#FF4D63; --cream:#F7EFE2; --ink:#120C08; --dim:#9A8570; }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:#0a0705;display:flex;flex-direction:column;align-items:center;gap:16px;padding:32px;font-family:'Instrument Sans',system-ui,sans-serif}
+  .stage{position:relative;width:1600px;height:900px;overflow:hidden;flex:none}
+  .plate{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transition:opacity .22s ease}
+  #plateB{opacity:0}
+
+  /* ---------- NAV PAD: 4 triangles + portal center ---------- */
+  .pad{
+    position:absolute;left:48px;bottom:40px;width:104px;height:104px;
+    opacity:1;transition:opacity .6s ease;
+  }
+  .pad.idle{opacity:.3}
+  .pad:hover{opacity:1}
+
+  .dir{position:absolute;cursor:pointer;transition:opacity .3s ease,transform .12s ease}
+  .dir svg{display:block;width:100%;height:100%}
+  .dir polygon{fill:#F7EFE2}
+  .dir.on{opacity:.6}
+  .dir.on:hover{opacity:1;transform:scale(1.15)}
+  .dir.on:active{transform:scale(.95)}
+  .dir.off{opacity:.08;pointer-events:none}
+  .up   {left:40px;top:0;width:24px;height:20px}
+  .down {left:40px;bottom:0;width:24px;height:20px}
+  .left {left:0;top:40px;width:20px;height:24px}
+  .right{right:0;top:40px;width:20px;height:24px}
+
+  /* portal — round thumbnail of the other world */
+  .portal{
+    position:absolute;left:28px;top:28px;width:48px;height:48px;border-radius:50%;
+    background-size:220% auto;background-position:center 42%;
+    box-shadow:0 0 0 1px rgba(255,255,255,.55), 0 2px 10px rgba(10,7,5,.55);
+    cursor:pointer;transition:transform .15s ease,box-shadow .3s ease;
+  }
+  .portal:hover{transform:scale(1.1);box-shadow:0 0 0 1px rgba(255,255,255,.9), 0 2px 14px rgba(10,7,5,.65)}
+  .portal:active{transform:scale(.96)}
+  .portal .plbl{
+    position:absolute;left:50%;top:calc(100% + 30px);transform:translateX(-50%);
+    color:var(--cream);font-size:10px;letter-spacing:.24em;white-space:nowrap;opacity:0;
+    transition:opacity .25s ease;text-transform:uppercase;text-shadow:0 1px 3px rgba(10,7,5,.8);
+  }
+  .pad:hover .portal .plbl{opacity:.85}
+
+  /* destination labels on arrows */
+  .lbl{
+    position:absolute;color:var(--cream);font-size:10px;letter-spacing:.22em;white-space:nowrap;
+    opacity:0;transition:opacity .25s ease;pointer-events:none;text-transform:uppercase;
+    text-shadow:0 1px 3px rgba(10,7,5,.8);
+  }
+  .pad:hover .dir.on .lbl{opacity:.8}
+  .up .lbl{left:50%;transform:translateX(-50%);bottom:calc(100% + 5px)}
+  .down .lbl{left:calc(100% + 8px);top:50%;transform:translateY(-50%)}
+  .left .lbl{right:calc(100% + 8px);top:50%;transform:translateY(-50%)}
+  .right .lbl{left:calc(100% + 8px);top:50%;transform:translateY(-50%)}
+
+  .where{
+    position:absolute;left:48px;bottom:14px;width:104px;text-align:center;
+    color:var(--cream);font-size:10px;letter-spacing:.28em;opacity:.5;
+    text-transform:uppercase;transition:opacity .6s ease;text-shadow:0 1px 3px rgba(10,7,5,.8);
+  }
+  .pad.idle ~ .where{opacity:.15}
+
+  .meta{color:#9A8570;font-size:13px;letter-spacing:.08em;text-align:center;max-width:1600px}
+  .meta b{color:#F7EFE2;font-weight:500}
+</style>
+</head>
+<body>
+<div class="stage">
+  <img class="plate" id="plateA" src="../../design/plates/plate-street.png" alt="">
+  <img class="plate" id="plateB" src="" alt="">
+
+  <div class="pad" id="pad">
+    <div class="dir up" id="dUp"><svg viewBox="0 0 24 20"><polygon points="12,0 24,20 0,20"/></svg><span class="lbl" id="lUp"></span></div>
+    <div class="dir down" id="dDown"><svg viewBox="0 0 24 20"><polygon points="0,0 24,0 12,20"/></svg><span class="lbl" id="lDown"></span></div>
+    <div class="dir left" id="dLeft"><svg viewBox="0 0 20 24"><polygon points="20,0 20,24 0,12"/></svg><span class="lbl" id="lLeft"></span></div>
+    <div class="dir right" id="dRight"><svg viewBox="0 0 20 24"><polygon points="0,0 20,12 0,24"/></svg><span class="lbl" id="lRight"></span></div>
+    <div class="portal" id="portal"><span class="plbl" id="plbl">OUTSIDE</span></div>
+  </div>
+  <div class="where" id="where">STREET</div>
+</div>
+<div class="meta">
+  NAV PAD v5 · four arrows + <b>portal center: a round thumb of the other world — press it to go there</b> ·
+  from any wall it walks you out (watch the chained cuts) · outside it shows the counter and walks you in ·
+  WASD / arrows · E or Enter = portal · idle 30% after 4s
+</div>
+<script>
+  const G = {
+    street : { up:['door','ENTER'],    down:null,               left:null,                 right:null },
+    door   : { up:['counter','GO IN'], down:['street','BACK'],  left:null,                 right:null },
+    counter: { up:null,                down:['door','DOOR'],    left:['mixes','MIXES'],    right:['crate','CRATE'] },
+    mixes  : { up:null,                down:null,               left:['vibes','VIBES'],    right:['counter','COUNTER'] },
+    vibes  : { up:null,                down:null,               left:['crate','CRATE'],    right:['mixes','MIXES'] },
+    crate  : { up:null,                down:null,               left:['counter','COUNTER'],right:['vibes','VIBES'] }
+  };
+  const LABELS = { street:'STREET', door:'DOOR', counter:'COUNTER', mixes:'MIXES · W', vibes:'VIBES · S', crate:'CRATE · E' };
+  const INSIDE = ['counter','mixes','vibes','crate'];
+  // express routes to/from the portal
+  const OUT = { counter:['door','street'], mixes:['counter','door','street'], crate:['counter','door','street'], vibes:['counter','door','street'], door:['street'] };
+  const IN  = { street:['door','counter'] };
+
+  const plates = {};
+  for (const k of Object.keys(G)) plates[k] = `../../design/plates/plate-${k}.png`;
+
+  let cur = 'street', showingA = true, busy = false, idleTimer = null;
+  const btns = { up:[dUp,lUp], down:[dDown,lDown], left:[dLeft,lLeft], right:[dRight,lRight] };
+
+  function paint(){
+    for (const [d, [btn, lbl]] of Object.entries(btns)){
+      const edge = G[cur][d];
+      btn.classList.toggle('on', !!edge);
+      btn.classList.toggle('off', !edge);
+      lbl.textContent = edge ? edge[1] : '';
+    }
+    const inside = INSIDE.includes(cur) || cur === 'door';
+    portal.style.backgroundImage = `url(${inside ? plates.street : plates.counter})`;
+    plbl.textContent = inside ? 'OUTSIDE' : 'INSIDE';
+    where.textContent = LABELS[cur];
+  }
+  function wake(){
+    pad.classList.remove('idle');
+    clearTimeout(idleTimer);
+    idleTimer = setTimeout(() => pad.classList.add('idle'), 4000);
+  }
+  function swap(to, ms){
+    const inEl  = showingA ? plateB : plateA;
+    const outEl = showingA ? plateA : plateB;
+    inEl.style.transitionDuration = ms + 'ms';
+    outEl.style.transitionDuration = ms + 'ms';
+    inEl.src = plates[to];
+    inEl.style.opacity = 1;
+    outEl.style.opacity = 0;
+    showingA = !showingA;
+    cur = to;
+  }
+  function go(d){
+    const edge = G[cur][d];
+    if (!edge || busy) return;
+    busy = true;
+    swap(edge[0], 300);
+    paint(); wake();
+    setTimeout(() => busy = false, 320);
+  }
+  function usePortal(){
+    if (busy) return;
+    const route = (INSIDE.includes(cur) || cur === 'door') ? OUT[cur] : IN[cur];
+    if (!route) return;
+    busy = true; wake();
+    let i = 0;
+    (function step(){
+      swap(route[i], 220);
+      paint();
+      i++;
+      if (i < route.length) setTimeout(step, 260);
+      else setTimeout(() => busy = false, 260);
+    })();
+  }
+  dUp.addEventListener('click', () => go('up'));
+  dDown.addEventListener('click', () => go('down'));
+  dLeft.addEventListener('click', () => go('left'));
+  dRight.addEventListener('click', () => go('right'));
+  portal.addEventListener('click', usePortal);
+  pad.addEventListener('mousemove', wake);
+  window.addEventListener('keydown', e => {
+    const k = e.key.toLowerCase();
+    if (k === 'arrowup'    || k === 'w') go('up');
+    if (k === 'arrowdown'  || k === 's') go('down');
+    if (k === 'arrowleft'  || k === 'a') go('left');
+    if (k === 'arrowright' || k === 'd') go('right');
+    if (k === 'e' || k === 'enter') usePortal();
+  });
+  paint(); wake();
+</script>
+</body>
+</html>

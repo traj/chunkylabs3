@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>chunkylabs3 — nav pad v4 (turn/step grammar + labels)</title>
+<style>
+  :root{ --pink:#FF4D63; --cream:#F7EFE2; --ink:#120C08; --dim:#9A8570; }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:#0a0705;display:flex;flex-direction:column;align-items:center;gap:16px;padding:32px;font-family:'Instrument Sans',system-ui,sans-serif}
+  .stage{position:relative;width:1600px;height:900px;overflow:hidden;flex:none}
+  .plate{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transition:opacity .3s ease}
+  #plateB{opacity:0}
+
+  /* ---------- NAV PAD: [turnL] [step] [turnR] / [back] ---------- */
+  .pad{
+    position:absolute;left:48px;bottom:44px;
+    display:flex;flex-direction:column;align-items:center;gap:6px;
+    opacity:1;transition:opacity .6s ease;
+  }
+  .pad.idle{opacity:.3}
+  .pad:hover{opacity:1}
+  .row{display:flex;align-items:center;gap:10px}
+
+  .btn{position:relative;width:26px;height:26px;cursor:pointer;transition:opacity .3s ease,transform .12s ease}
+  .btn svg{display:block;width:100%;height:100%}
+  .btn svg *{stroke:#F7EFE2;fill:none;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+  .btn svg .solid{fill:#F7EFE2;stroke:none}
+  .btn.on{opacity:.65}
+  .btn.on:hover{opacity:1;transform:scale(1.15)}
+  .btn.on:active{transform:scale(.95)}
+  .btn.off{opacity:.08;pointer-events:none}
+
+  /* destination labels — appear beside each live button on pad hover */
+  .lbl{
+    position:absolute;top:50%;transform:translateY(-50%);
+    color:var(--cream);font-size:10px;letter-spacing:.22em;white-space:nowrap;
+    opacity:0;transition:opacity .25s ease;pointer-events:none;text-transform:uppercase;
+    text-shadow:0 1px 3px rgba(10,7,5,.8);
+  }
+  .lbl.w{right:calc(100% + 8px)}
+  .lbl.e{left:calc(100% + 8px)}
+  .lbl.n{left:50%;transform:translate(-50%,0);top:auto;bottom:calc(100% + 6px)}
+  .lbl.s{left:calc(100% + 8px)}
+  .pad:hover .btn.on .lbl{opacity:.85}
+
+  /* current-station readout */
+  .where{
+    margin-top:2px;color:var(--cream);font-size:10px;letter-spacing:.28em;opacity:.5;
+    text-transform:uppercase;transition:opacity .6s ease;text-shadow:0 1px 3px rgba(10,7,5,.8);
+  }
+  .pad.idle .where{opacity:.15}
+
+  .meta{color:var(--dim);font-size:13px;letter-spacing:.08em;text-align:center;max-width:1600px}
+  .meta b{color:var(--cream);font-weight:500}
+</style>
+</head>
+<body>
+<div class="stage">
+  <img class="plate" id="plateA" src="../../design/plates/plate-street.png" alt="">
+  <img class="plate" id="plateB" src="" alt="">
+
+  <div class="pad" id="pad">
+    <div class="row">
+      <!-- TURN LEFT: arc, unmistakably rotate -->
+      <div class="btn" id="bLeft">
+        <svg viewBox="0 0 26 26">
+          <path d="M 21 20 A 10.5 10.5 0 1 1 21 6.5"/>
+          <path class="solid" d="M 21 1.5 L 21 11 L 14 6.2 Z"/>
+        </svg>
+        <span class="lbl w" id="lLeft"></span>
+      </div>
+      <!-- STEP FORWARD: straight -->
+      <div class="btn" id="bUp">
+        <svg viewBox="0 0 26 26"><path class="solid" d="M 13 2 L 24 22 L 2 22 Z"/></svg>
+        <span class="lbl n" id="lUp"></span>
+      </div>
+      <!-- TURN RIGHT: arc -->
+      <div class="btn" id="bRight">
+        <svg viewBox="0 0 26 26">
+          <path d="M 5 20 A 10.5 10.5 0 1 0 5 6.5"/>
+          <path class="solid" d="M 5 1.5 L 5 11 L 12 6.2 Z"/>
+        </svg>
+        <span class="lbl e" id="lRight"></span>
+      </div>
+    </div>
+    <div class="row">
+      <!-- STEP BACK: straight -->
+      <div class="btn" id="bDown">
+        <svg viewBox="0 0 26 26"><path class="solid" d="M 2 4 L 24 4 L 13 24 Z"/></svg>
+        <span class="lbl s" id="lDown"></span>
+      </div>
+    </div>
+    <div class="where" id="where">STREET</div>
+  </div>
+</div>
+<div class="meta">
+  NAV PAD v4 · <b>arcs turn, triangles travel</b> · hover the pad for destination labels ·
+  research: Grimrock turn/step split · NN/G labeled-arrow finding · WASD / arrows · idle 30% after 4s
+</div>
+<script>
+  // graph: turn = rotate ring in place · step = travel through space
+  const G = {
+    street : { up:['door','ENTER'],    down:null,               left:null,                right:null,               label:'STREET'  },
+    door   : { up:['counter','GO IN'], down:['street','BACK'],  left:null,                right:null,               label:'DOOR'    },
+    counter: { up:null,                down:['door','OUTSIDE'], left:['mixes','MIXES'],   right:['crate','CRATE'],  label:'COUNTER' },
+    mixes  : { up:null,                down:null,               left:['vibes','VIBES'],   right:['counter','COUNTER'],label:'MIXES · W' },
+    vibes  : { up:null,                down:null,               left:['crate','CRATE'],   right:['mixes','MIXES'],  label:'VIBES · S' },
+    crate  : { up:null,                down:null,               left:['counter','COUNTER'],right:['vibes','VIBES'], label:'CRATE · E' }
+  };
+  const plates = {};
+  for (const k of Object.keys(G)) plates[k] = `../../design/plates/plate-${k}.png`;
+
+  let cur = 'street', showingA = true, busy = false, idleTimer = null;
+  const btns = { up:[bUp,lUp], down:[bDown,lDown], left:[bLeft,lLeft], right:[bRight,lRight] };
+
+  function paint(){
+    for (const [d, [btn, lbl]] of Object.entries(btns)){
+      const edge = G[cur][d];
+      btn.classList.toggle('on', !!edge);
+      btn.classList.toggle('off', !edge);
+      lbl.textContent = edge ? edge[1] : '';
+    }
+    where.textContent = G[cur].label;
+  }
+  function wake(){
+    pad.classList.remove('idle');
+    clearTimeout(idleTimer);
+    idleTimer = setTimeout(() => pad.classList.add('idle'), 4000);
+  }
+  function go(d){
+    const edge = G[cur][d];
+    if (!edge || busy) return;
+    busy = true;
+    const inEl  = showingA ? plateB : plateA;
+    const outEl = showingA ? plateA : plateB;
+    inEl.src = plates[edge[0]];
+    inEl.style.opacity = 1;
+    outEl.style.opacity = 0;
+    showingA = !showingA;
+    cur = edge[0];
+    paint(); wake();
+    setTimeout(() => busy = false, 320);
+  }
+  bUp.addEventListener('click', () => go('up'));
+  bDown.addEventListener('click', () => go('down'));
+  bLeft.addEventListener('click', () => go('left'));
+  bRight.addEventListener('click', () => go('right'));
+  pad.addEventListener('mousemove', wake);
+  window.addEventListener('keydown', e => {
+    const k = e.key.toLowerCase();
+    if (k === 'arrowup'    || k === 'w') go('up');
+    if (k === 'arrowdown'  || k === 's') go('down');
+    if (k === 'arrowleft'  || k === 'a') go('left');
+    if (k === 'arrowright' || k === 'd') go('right');
+  });
+  paint(); wake();
+</script>
+</body>
+</html>
